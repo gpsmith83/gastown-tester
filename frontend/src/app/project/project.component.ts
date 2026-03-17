@@ -4,7 +4,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProjectService } from '../services/project.service';
 import { AuthService } from '../services/auth.service';
+import { RequirementService } from '../services/requirement.service';
 import { ProjectWithDetails, CreateProjectRequest } from '../models/workspace.model';
+import { RequirementWithDetails } from '../models/requirement.model';
 
 @Component({
   selector: 'app-project',
@@ -26,11 +28,17 @@ export class ProjectComponent implements OnInit {
   goalInput = '';
   labelInput = '';
 
+  // Requirements-related properties
+  projectRequirements: RequirementWithDetails[] = [];
+  loadingRequirements = false;
+  requirementError: string | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private projectService: ProjectService,
-    private authService: AuthService
+    private authService: AuthService,
+    private requirementService: RequirementService
   ) {}
 
   ngOnInit(): void {
@@ -63,6 +71,7 @@ export class ProjectComponent implements OnInit {
     this.projectService.getProject(this.projectId).subscribe({
       next: (project) => {
         this.project = project;
+        this.loadRequirements(); // Load requirements after project is loaded
         this.isLoading = false;
       },
       error: (error) => {
@@ -177,6 +186,50 @@ export class ProjectComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/workspace']);
+  }
+
+  // Load requirements for the current project
+  loadRequirements(): void {
+    if (!this.projectId) return;
+
+    this.loadingRequirements = true;
+    this.requirementError = null;
+
+    this.requirementService.getProjectRequirements(this.projectId).subscribe({
+      next: (requirements) => {
+        this.projectRequirements = requirements;
+        this.loadingRequirements = false;
+      },
+      error: (error) => {
+        console.error('Failed to load requirements:', error);
+        this.requirementError = 'Failed to load requirements. Please try again.';
+        this.loadingRequirements = false;
+      }
+    });
+  }
+
+  // Get count of requirements by status for summary display
+  getRequirementCountByStatus(status: string): number {
+    return this.projectRequirements.filter(req => req.status === status).length;
+  }
+
+  // Track function for ngFor performance
+  trackRequirement(index: number, requirement: RequirementWithDetails): string {
+    return requirement.id;
+  }
+
+  // Navigate to requirement detail view
+  navigateToRequirement(requirementId: string): void {
+    // For now, we'll navigate to the requirement route with the ID
+    // This assumes a requirement detail component/route exists
+    this.router.navigate(['/requirement'], { queryParams: { id: requirementId } });
+  }
+
+  // Handle creating first requirement (placeholder for requirement creation)
+  createFirstRequirement(): void {
+    // This could open a modal or navigate to a creation page
+    // For now, we'll show an alert - this should be implemented based on B-102
+    alert('Requirement creation functionality to be implemented based on B-102');
   }
 
   get canEdit(): boolean {

@@ -211,6 +211,115 @@
       </div>
     </div>
 
+    <!-- Requirements Dashboard -->
+    <div class="detail-section requirements-dashboard">
+      <div class="requirements-header">
+        <h2>Requirements</h2>
+        <div class="requirements-summary" *ngIf="projectRequirements">
+          <span class="total-count">{{projectRequirements.length}} Total</span>
+          <span class="status-breakdown" *ngIf="projectRequirements.length > 0">
+            <span class="status-count active" *ngIf="getRequirementCountByStatus('active') > 0">
+              {{getRequirementCountByStatus('active')}} Active
+            </span>
+            <span class="status-count draft" *ngIf="getRequirementCountByStatus('draft') > 0">
+              {{getRequirementCountByStatus('draft')}} Draft
+            </span>
+            <span class="status-count completed" *ngIf="getRequirementCountByStatus('completed') > 0">
+              {{getRequirementCountByStatus('completed')}} Completed
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Loading requirements -->
+      <div class="requirements-loading" *ngIf="loadingRequirements">
+        <div class="loading-spinner small"></div>
+        <p>Loading requirements...</p>
+      </div>
+
+      <!-- Requirements list -->
+      <div class="requirements-list" *ngIf="projectRequirements && projectRequirements.length > 0 && !loadingRequirements">
+        <div
+          class="requirement-card"
+          *ngFor="let requirement of projectRequirements; trackBy: trackRequirement"
+          (click)="navigateToRequirement(requirement.id)"
+        >
+          <div class="requirement-main">
+            <div class="requirement-title">{{requirement.title}}</div>
+            <div class="requirement-description" *ngIf="requirement.description">
+              {{requirement.description}}
+            </div>
+            <div class="requirement-meta">
+              <span class="requirement-status" [class]="requirement.status">
+                {{requirement.status | titlecase}}
+              </span>
+              <span class="requirement-type" [class]="requirement.type">
+                {{requirement.type | titlecase}}
+              </span>
+              <span class="requirement-priority" [class]="'priority-' + requirement.priority">
+                P{{requirement.priority}}
+              </span>
+              <span class="requirement-author">
+                <img
+                  [src]="requirement.author?.avatar_url"
+                  [alt]="requirement.author?.username"
+                  class="author-avatar"
+                  *ngIf="requirement.author?.avatar_url"
+                >
+                by {{requirement.author?.name || requirement.author?.username}}
+              </span>
+            </div>
+          </div>
+          <div class="requirement-sidebar">
+            <div class="requirement-dates">
+              <div class="date-info">
+                <label>Updated</label>
+                <span>{{requirement.updated_at | date:'MMM d, y'}}</span>
+              </div>
+              <div class="date-info" *ngIf="requirement.created_at !== requirement.updated_at">
+                <label>Created</label>
+                <span>{{requirement.created_at | date:'MMM d, y'}}</span>
+              </div>
+            </div>
+            <div class="requirement-actions">
+              <button class="view-btn" (click)="navigateToRequirement(requirement.id); $event.stopPropagation()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+                View
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div class="requirements-empty" *ngIf="!loadingRequirements && (!projectRequirements || projectRequirements.length === 0)">
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10,9 9,9 8,9"/>
+          </svg>
+          <h3>No Requirements Yet</h3>
+          <p>This project doesn't have any requirements defined yet. Requirements help define what needs to be built and track progress.</p>
+          <button class="create-first-btn" (click)="createFirstRequirement()">
+            Create First Requirement
+          </button>
+        </div>
+      </div>
+
+      <!-- Error loading requirements -->
+      <div class="requirements-error" *ngIf="requirementError && !loadingRequirements">
+        <div class="error-state">
+          <p>{{requirementError}}</p>
+          <button class="retry-btn" (click)="loadRequirements()">Try Again</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Project Actions -->
     <div class="project-actions" *ngIf="canEdit && !isEditing">
       <div class="actions-section">
