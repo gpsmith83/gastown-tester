@@ -102,6 +102,23 @@ CREATE TABLE IF NOT EXISTS github_repositories (
     UNIQUE(github_repo_id)
 );
 
+-- Requirements table
+CREATE TABLE IF NOT EXISTS requirements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(500) NOT NULL,
+    description TEXT,
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    author_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    priority INT DEFAULT 3, -- 1=highest, 5=lowest
+    type VARCHAR(50) DEFAULT 'feature', -- feature, bug, enhancement, epic
+    status VARCHAR(50) DEFAULT 'draft', -- draft, active, completed, archived
+    github_issue_number INT,
+    github_issue_url VARCHAR(500),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_users_github_id ON users(github_id);
 CREATE INDEX IF NOT EXISTS idx_workspaces_owner_id ON workspaces(owner_id);
@@ -114,6 +131,11 @@ CREATE INDEX IF NOT EXISTS idx_github_repositories_project_id ON github_reposito
 CREATE INDEX IF NOT EXISTS idx_github_repositories_github_repo_id ON github_repositories(github_repo_id);
 CREATE INDEX IF NOT EXISTS idx_github_repositories_owner ON github_repositories(owner);
 CREATE INDEX IF NOT EXISTS idx_github_repositories_full_name ON github_repositories(full_name);
+CREATE INDEX IF NOT EXISTS idx_requirements_project_id ON requirements(project_id);
+CREATE INDEX IF NOT EXISTS idx_requirements_author_id ON requirements(author_id);
+CREATE INDEX IF NOT EXISTS idx_requirements_status ON requirements(status);
+CREATE INDEX IF NOT EXISTS idx_requirements_is_active ON requirements(is_active);
+CREATE INDEX IF NOT EXISTS idx_requirements_priority ON requirements(priority);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION trigger_set_timestamp()
@@ -146,5 +168,11 @@ CREATE TRIGGER set_timestamp_projects
 DROP TRIGGER IF EXISTS set_timestamp_github_repositories ON github_repositories;
 CREATE TRIGGER set_timestamp_github_repositories
     BEFORE UPDATE ON github_repositories
+    FOR EACH ROW
+    EXECUTE PROCEDURE trigger_set_timestamp();
+
+DROP TRIGGER IF EXISTS set_timestamp_requirements ON requirements;
+CREATE TRIGGER set_timestamp_requirements
+    BEFORE UPDATE ON requirements
     FOR EACH ROW
     EXECUTE PROCEDURE trigger_set_timestamp();
