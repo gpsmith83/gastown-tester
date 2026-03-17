@@ -216,6 +216,30 @@ router.put('/:id', async (req: Request, res: Response) => {
       data.default_labels = Array.isArray(data.default_labels) ? data.default_labels : [];
     }
 
+    // Validate GitHub repository URL (B-601, B-602)
+    if (data.github_repo_url !== undefined) {
+      if (data.github_repo_url && data.github_repo_url.trim()) {
+        const githubUrlRegex = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/?$/;
+        if (!githubUrlRegex.test(data.github_repo_url.trim())) {
+          return res.status(400).json({
+            error: 'Validation Error',
+            message: 'GitHub repository URL must be a valid GitHub repository URL (e.g., https://github.com/owner/repo)'
+          });
+        }
+        data.github_repo_url = data.github_repo_url.trim();
+
+        // Extract GitHub repository ID from URL
+        const match = data.github_repo_url.match(/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)/);
+        if (match) {
+          data.github_repo_id = `${match[1]}/${match[2]}`;
+        }
+      } else {
+        // Clear both fields if URL is being removed
+        data.github_repo_url = null;
+        data.github_repo_id = null;
+      }
+    }
+
     const project = await ProjectModel.update(id, data);
     if (!project) {
       return res.status(404).json({

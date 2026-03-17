@@ -20,6 +20,7 @@ import requirementRoutes from './routes/requirements';
 import linearRoutes from './routes/linear';
 import githubRepositoryRoutes from './routes/github-repositories';
 import jobRoutes from './routes/jobs';
+import contextSourceRoutes from './routes/context-sources';
 import { globalAIService } from './services/ai-provider';
 
 // Import correlation middleware and structured logging
@@ -140,7 +141,8 @@ app.get('/', (req: Request, res: Response) => {
       requirements: '/api/requirements',
       linear: '/api/linear',
       githubRepositories: '/api/github-repositories',
-      jobs: '/api/jobs'
+      jobs: '/api/jobs',
+      context_sources: '/api/context-sources'
     }
   });
 });
@@ -154,6 +156,7 @@ app.use('/api/requirements', requirementRoutes);
 app.use('/api/linear', linearRoutes);
 app.use('/api/github-repositories', githubRepositoryRoutes);
 app.use('/api/jobs', jobRoutes);
+app.use('/api/context-sources', contextSourceRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -229,6 +232,7 @@ async function startServer() {
 
     // Start Express server
     const server = app.listen(PORT, () => {
+<<<<<<< HEAD
       appLogger.info('Gastown Tester API server started', {
         operation: 'server_start',
         port: PORT,
@@ -243,7 +247,8 @@ async function startServer() {
           requirements: `http://localhost:${PORT}/api/requirements`,
           linear: `http://localhost:${PORT}/api/linear`,
           githubRepositories: `http://localhost:${PORT}/api/github-repositories`,
-          jobs: `http://localhost:${PORT}/api/jobs`
+          jobs: `http://localhost:${PORT}/api/jobs`,
+          contextSources: `http://localhost:${PORT}/api/context-sources`
         }
       });
     });

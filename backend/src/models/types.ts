@@ -41,6 +41,10 @@ export interface Project {
   default_labels?: any[];
   default_persona_stack?: any;
 
+  // GitHub repository connection (B-601, B-602)
+  github_repo_url?: string;
+  github_repo_id?: string;
+
   // Additional fields
   status: 'active' | 'archived' | 'draft';
   settings?: any;
@@ -71,6 +75,8 @@ export interface CreateProjectRequest {
   goals?: string[];
   default_labels?: any[];
   default_persona_stack?: any;
+  github_repo_url?: string;
+  github_repo_id?: string;
 }
 
 export interface WorkspaceWithProjects extends Workspace {
@@ -83,7 +89,6 @@ export interface ProjectWithDetails extends Project {
   owner: User;
 }
 
-<<<<<<< HEAD
 export interface Requirement {
   id: string;
   title: string;
@@ -161,7 +166,6 @@ export interface GitHubRepository {
   updated_at: Date;
 }
 
-<<<<<<< HEAD
 // Request/Response DTOs for requirements
 export interface CreateRequirementRequest {
   title: string;
@@ -238,4 +242,68 @@ export interface UpdateGitHubRepositoryRequest {
 
 export interface ProjectWithRepository extends ProjectWithDetails {
   github_repository?: GitHubRepository;
+}
+
+// Context source recommendation and selection types (B-603)
+export interface ContextSourceType {
+  id: string;
+  name: string;
+  description: string;
+  pattern: string; // File pattern or path
+  priority: number; // 1=highest, 5=lowest
+  category: 'documentation' | 'code' | 'config' | 'test';
+}
+
+export interface RecommendedContextSource {
+  id: string;
+  project_id: string;
+  source_type_id: string;
+  file_path: string;
+  file_size?: number;
+  last_modified?: Date;
+  confidence_score: number; // 0-100, how confident we are this is useful
+  is_recommended: boolean;
+  recommendation_reason?: string;
+}
+
+export interface SelectedContextSource {
+  id: string;
+  project_id: string;
+  source_type_id: string;
+  file_path: string;
+  is_selected: boolean;
+  selected_by: string; // user_id
+  selected_at: Date;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ContextSourceRecommendation {
+  source_type: ContextSourceType;
+  files: RecommendedContextSource[];
+  total_size?: number;
+  recommendation_summary: string;
+}
+
+export interface ProjectContextAnalysis {
+  project_id: string;
+  github_repo_url: string;
+  analyzed_at: Date;
+  total_files_scanned: number;
+  recommendations: ContextSourceRecommendation[];
+  analysis_status: 'pending' | 'completed' | 'failed';
+  error_message?: string;
+}
+
+// Request/Response DTOs for context sources
+export interface AnalyzeProjectContextRequest {
+  project_id: string;
+  force_refresh?: boolean;
+}
+
+export interface UpdateContextSelectionRequest {
+  selections: {
+    file_path: string;
+    is_selected: boolean;
+  }[];
 }

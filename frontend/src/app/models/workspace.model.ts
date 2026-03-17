@@ -40,6 +40,10 @@ export interface Project {
   default_labels?: any[];
   default_persona_stack?: any;
 
+  // GitHub repository connection (B-601, B-602)
+  github_repo_url?: string;
+  github_repo_id?: string;
+
   // Additional fields
   status: 'active' | 'archived' | 'draft';
   settings?: any;
@@ -72,6 +76,8 @@ export interface CreateProjectRequest {
   goals?: string[];
   default_labels?: any[];
   default_persona_stack?: any;
+  github_repo_url?: string;
+  github_repo_id?: string;
 }
 
 // API Response wrappers
