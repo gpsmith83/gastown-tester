@@ -1,0 +1,329 @@
+<div class="linear-connection-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoadingConnection" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading Linear connection...</p>
+  </div>
+
+  <!-- Connection Error -->
+  <div *ngIf="connectionError" class="error-container">
+    <div class="error-alert">
+      <strong>Error:</strong> {{ connectionError }}
+      <button type="button" class="retry-btn" (click)="loadConnection()">Retry</button>
+    </div>
+  </div>
+
+  <!-- Existing Connection Display -->
+  <div *ngIf="!isLoadingConnection && !connectionError && connection && !showSetupFlow" class="connection-display">
+    <div class="connection-header">
+      <h3>Linear Connection</h3>
+      <div class="connection-status" [ngClass]="getConnectionStatus()?.statusClass">
+        <span class="status-indicator"></span>
+        {{ getConnectionStatus()?.statusText }}
+      </div>
+    </div>
+
+    <div class="connection-details">
+      <p class="connection-summary">{{ getConnectionSummary() }}</p>
+
+      <div class="connection-metadata" *ngIf="connection.last_validated_at">
+        <small>Last validated: {{ formatLastValidated(connection.last_validated_at) }}</small>
+      </div>
+
+      <div *ngIf="connection.validation_error" class="validation-error">
+        <strong>Validation Issue:</strong> {{ connection.validation_error }}
+      </div>
+    </div>
+
+    <!-- Connection Actions -->
+    <div class="connection-actions" *ngIf="canEdit">
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="validateConnection()"
+        [disabled]="isValidatingConnection">
+        <span *ngIf="isValidatingConnection" class="button-spinner"></span>
+        {{ isValidatingConnection ? 'Validating...' : 'Validate Connection' }}
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="startSetup()">
+        Edit Connection
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-danger"
+        (click)="deleteConnection()">
+        Delete Connection
+      </button>
+    </div>
+  </div>
+
+  <!-- No Connection State -->
+  <div *ngIf="!isLoadingConnection && !connectionError && !connection && !showSetupFlow" class="no-connection">
+    <div class="no-connection-content">
+      <h3>Linear Integration</h3>
+      <p>Connect your Linear workspace to sync issues and track project requirements.</p>
+
+      <div class="setup-benefits">
+        <h4>Benefits of Linear Integration:</h4>
+        <ul>
+          <li>Automatically sync project requirements with Linear issues</li>
+          <li>Track development progress in real-time</li>
+          <li>Maintain traceability between code and requirements</li>
+          <li>Streamline project management workflow</li>
+        </ul>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="startSetup()"
+        *ngIf="canEdit">
+        Set Up Linear Connection
+      </button>
+
+      <p *ngIf="!canEdit" class="no-edit-permission">
+        You don't have permission to set up Linear connections for this project.
+      </p>
+    </div>
+  </div>
+
+  <!-- Setup Flow -->
+  <div *ngIf="showSetupFlow" class="setup-flow">
+    <div class="setup-header">
+      <h3>{{ connection ? 'Edit' : 'Set Up' }} Linear Connection</h3>
+      <button type="button" class="close-btn" (click)="cancelSetup()" aria-label="Close">×</button>
+    </div>
+
+    <!-- Setup Progress -->
+    <div class="setup-progress">
+      <div class="progress-steps">
+        <div class="progress-step" [ngClass]="{ 'active': setupStep === 'token', 'completed': setupStep !== 'token' }">
+          <div class="step-number">1</div>
+          <div class="step-label">API Token</div>
+        </div>
+        <div class="progress-step" [ngClass]="{ 'active': setupStep === 'selection', 'completed': setupStep === 'validation' || setupStep === 'complete' }">
+          <div class="step-number">2</div>
+          <div class="step-label">Selection</div>
+        </div>
+        <div class="progress-step" [ngClass]="{ 'active': setupStep === 'validation', 'completed': setupStep === 'complete' }">
+          <div class="step-number">3</div>
+          <div class="step-label">Validation</div>
+        </div>
+        <div class="progress-step" [ngClass]="{ 'active': setupStep === 'complete' }">
+          <div class="step-number">4</div>
+          <div class="step-label">Complete</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Setup Error -->
+    <div *ngIf="setupError" class="error-container">
+      <div class="error-alert">
+        <strong>Error:</strong> {{ setupError }}
+      </div>
+    </div>
+
+    <!-- Step 1: API Token -->
+    <div *ngIf="setupStep === 'token'" class="setup-step">
+      <h4>Enter Your Linear API Token</h4>
+      <p>You can generate a Personal API key in your Linear account settings under "API".</p>
+
+      <div class="form-group">
+        <label for="apiToken">Linear API Token</label>
+        <input
+          id="apiToken"
+          type="password"
+          class="form-control"
+          [(ngModel)]="apiToken"
+          placeholder="lin_api_..."
+          [disabled]="isTestingToken">
+        <small class="form-help">Your token will be stored securely and encrypted.</small>
+      </div>
+
+      <div class="step-actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="cancelSetup()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="testApiToken()"
+          [disabled]="!apiToken.trim() || isTestingToken">
+          <span *ngIf="isTestingToken" class="button-spinner"></span>
+          {{ isTestingToken ? 'Testing...' : 'Test Token & Continue' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Workspace and Team Selection -->
+    <div *ngIf="setupStep === 'selection'" class="setup-step">
+      <h4>Select Workspace and Team</h4>
+      <p>Choose the Linear workspace and team where you want to manage your project requirements.</p>
+
+      <!-- Token Test Results -->
+      <div *ngIf="tokenTestResult" class="token-success">
+        <div class="success-alert">
+          <strong>✓ Token validated successfully!</strong>
+          <div class="token-info">
+            <p><strong>Organization:</strong> {{ tokenTestResult.organization?.name }}</p>
+            <p><strong>User:</strong> {{ tokenTestResult.user?.name }} ({{ tokenTestResult.user?.email }})</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workspace Selection -->
+      <div class="form-group">
+        <label for="workspace">Workspace</label>
+        <select
+          id="workspace"
+          class="form-control"
+          [(ngModel)]="selectedWorkspaceId"
+          (change)="onWorkspaceChange()">
+          <option value="">Select a workspace...</option>
+          <option *ngFor="let workspace of availableWorkspaces" [value]="workspace.id">
+            {{ workspace.name }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Team Selection -->
+      <div class="form-group" *ngIf="selectedWorkspaceId">
+        <label for="team">Team</label>
+        <select
+          id="team"
+          class="form-control"
+          [(ngModel)]="selectedTeamId"
+          (change)="onTeamChange()">
+          <option value="">Select a team...</option>
+          <option *ngFor="let team of availableTeams" [value]="team.id">
+            {{ team.name }} ({{ team.key }})
+          </option>
+        </select>
+      </div>
+
+      <!-- Project Selection (Optional) -->
+      <div class="form-group" *ngIf="selectedTeamId && availableProjects.length > 0">
+        <label for="linearProject">Linear Project (Optional)</label>
+        <select
+          id="linearProject"
+          class="form-control"
+          [(ngModel)]="selectedProjectId">
+          <option value="">No specific project</option>
+          <option *ngFor="let project of availableProjects" [value]="project.id">
+            {{ project.name }}
+            <span *ngIf="project.description"> - {{ project.description }}</span>
+          </option>
+        </select>
+        <small class="form-help">If selected, only issues from this Linear project will be synced.</small>
+      </div>
+
+      <!-- Selection Summary -->
+      <div *ngIf="selectedWorkspaceId && selectedTeamId" class="selection-summary">
+        <h5>Connection Summary</h5>
+        <ul>
+          <li><strong>Workspace:</strong> {{ getSelectedWorkspaceName() }}</li>
+          <li><strong>Team:</strong> {{ getSelectedTeamName() }}</li>
+          <li *ngIf="selectedProjectId"><strong>Project:</strong> {{ getSelectedProjectName() }}</li>
+        </ul>
+      </div>
+
+      <div class="step-actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="setupStep = 'token'">
+          Back
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="proceedToValidation()"
+          [disabled]="!selectedWorkspaceId || !selectedTeamId">
+          Continue to Validation
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Validation and Creation -->
+    <div *ngIf="setupStep === 'validation'" class="setup-step">
+      <h4>Review and Create Connection</h4>
+      <p>Review your connection settings and create the Linear integration.</p>
+
+      <div class="validation-summary">
+        <h5>Connection Configuration</h5>
+        <div class="summary-item">
+          <strong>Workspace:</strong> {{ getSelectedWorkspaceName() }}
+        </div>
+        <div class="summary-item">
+          <strong>Team:</strong> {{ getSelectedTeamName() }}
+        </div>
+        <div class="summary-item" *ngIf="selectedProjectId">
+          <strong>Linear Project:</strong> {{ getSelectedProjectName() }}
+        </div>
+        <div class="summary-item" *ngIf="!selectedProjectId">
+          <strong>Project Scope:</strong> All team issues
+        </div>
+      </div>
+
+      <div class="validation-note">
+        <p><strong>What happens next:</strong></p>
+        <ul>
+          <li>Your API token will be securely encrypted and stored</li>
+          <li>The connection will be validated against Linear's API</li>
+          <li>You can start syncing requirements with Linear issues</li>
+          <li>You can manage this connection from the project settings</li>
+        </ul>
+      </div>
+
+      <div class="step-actions">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="setupStep = 'selection'">
+          Back
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="createConnection()"
+          [disabled]="isCreatingConnection">
+          <span *ngIf="isCreatingConnection" class="button-spinner"></span>
+          {{ isCreatingConnection ? 'Creating...' : 'Create Connection' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 4: Complete -->
+    <div *ngIf="setupStep === 'complete'" class="setup-step">
+      <div class="success-container">
+        <div class="success-icon">✓</div>
+        <h4>Linear Connection Created Successfully!</h4>
+        <p>Your project is now connected to Linear. You can start managing requirements and syncing issues.</p>
+
+        <div class="completion-summary">
+          <h5>Connection Details</h5>
+          <p><strong>{{ getSelectedWorkspaceName() }}</strong> → <strong>{{ getSelectedTeamName() }}</strong></p>
+          <p *ngIf="getSelectedProjectName()">Project: <strong>{{ getSelectedProjectName() }}</strong></p>
+        </div>
+
+        <div class="next-steps">
+          <h5>What's Next?</h5>
+          <ul>
+            <li>Create and manage project requirements</li>
+            <li>Sync requirements with Linear issues</li>
+            <li>Track development progress</li>
+            <li>Validate the connection periodically</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
