@@ -83,6 +83,7 @@ export interface ProjectWithDetails extends Project {
   owner: User;
 }
 
+<<<<<<< HEAD
 export interface Requirement {
   id: string;
   title: string;
@@ -131,6 +132,36 @@ export interface LinearConnection {
   updated_at: Date;
 }
 
+// GitHub Repository Connection types
+export interface GitHubRepository {
+  id: string;
+  project_id: string;
+
+  // GitHub repository metadata
+  github_repo_id: number;
+  owner: string;
+  name: string;
+  full_name: string;
+  description?: string;
+  url: string;
+  clone_url: string;
+  ssh_url: string;
+
+  // Repository details
+  private: boolean;
+  default_branch: string;
+  language?: string;
+  topics?: string[];
+
+  // Access configuration
+  access_level: 'read' | 'write' | 'admin';
+  webhook_configured: boolean;
+
+  created_at: Date;
+  updated_at: Date;
+}
+
+<<<<<<< HEAD
 // Request/Response DTOs for requirements
 export interface CreateRequirementRequest {
   title: string;
@@ -190,4 +221,21 @@ export interface LinearConnectionValidationResult {
 
 export interface ProjectWithLinearConnection extends ProjectWithDetails {
   linear_connection?: LinearConnection;
+}
+
+export interface CreateGitHubRepositoryRequest {
+  project_id: string;
+  github_repo_id: number;
+  owner: string;
+  name: string;
+  access_level?: 'read' | 'write' | 'admin';
+}
+
+export interface UpdateGitHubRepositoryRequest {
+  access_level?: 'read' | 'write' | 'admin';
+  webhook_configured?: boolean;
+}
+
+export interface ProjectWithRepository extends ProjectWithDetails {
+  github_repository?: GitHubRepository;
 }

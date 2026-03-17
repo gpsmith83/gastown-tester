@@ -18,6 +18,7 @@ import projectRoutes from './routes/projects';
 import aiRoutes from './routes/ai';
 import requirementRoutes from './routes/requirements';
 import linearRoutes from './routes/linear';
+import githubRepositoryRoutes from './routes/github-repositories';
 import { globalAIService } from './services/ai-provider';
 
 // Initialize Express app
@@ -123,7 +124,8 @@ app.get('/', (req: Request, res: Response) => {
       projects: '/api/projects',
       ai: '/api/ai',
       requirements: '/api/requirements',
-      linear: '/api/linear'
+      linear: '/api/linear',
+      githubRepositories: '/api/github-repositories'
     }
   });
 });
@@ -135,6 +137,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/requirements', requirementRoutes);
 app.use('/api/linear', linearRoutes);
+app.use('/api/github-repositories', githubRepositoryRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -205,6 +208,7 @@ async function startServer() {
       console.log('🤖 AI Provider API:', `http://localhost:${PORT}/api/ai`);
       console.log('📋 Requirements API:', `http://localhost:${PORT}/api/requirements`);
       console.log('🔗 Linear API:', `http://localhost:${PORT}/api/linear`);
+      console.log('🐙 GitHub Repositories API:', `http://localhost:${PORT}/api/github-repositories`);
       console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
       console.log('🎯 Frontend URL:', process.env.FRONTEND_URL || 'http://localhost:4200');
     });

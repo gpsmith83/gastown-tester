@@ -68,6 +68,40 @@ CREATE TABLE IF NOT EXISTS project_members (
     UNIQUE(project_id, user_id)
 );
 
+-- GitHub repository connections table
+CREATE TABLE IF NOT EXISTS github_repositories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+
+    -- GitHub repository metadata
+    github_repo_id BIGINT NOT NULL,
+    owner VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    url VARCHAR(500) NOT NULL,
+    clone_url VARCHAR(500) NOT NULL,
+    ssh_url VARCHAR(500) NOT NULL,
+
+    -- Repository details
+    private BOOLEAN DEFAULT false,
+    default_branch VARCHAR(255) DEFAULT 'main',
+    language VARCHAR(100),
+    topics TEXT[],
+
+    -- Access configuration
+    access_level VARCHAR(50) DEFAULT 'read', -- read, write, admin
+    webhook_configured BOOLEAN DEFAULT false,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Ensure one repo per project for now
+    UNIQUE(project_id),
+    -- Ensure same GitHub repo isn't connected to multiple projects
+    UNIQUE(github_repo_id)
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_users_github_id ON users(github_id);
 CREATE INDEX IF NOT EXISTS idx_workspaces_owner_id ON workspaces(owner_id);
@@ -76,6 +110,10 @@ CREATE INDEX IF NOT EXISTS idx_workspace_members_user_id ON workspace_members(us
 CREATE INDEX IF NOT EXISTS idx_projects_workspace_id ON projects(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_projects_owner_id ON projects(owner_id);
 CREATE INDEX IF NOT EXISTS idx_project_members_project_id ON project_members(project_id);
+CREATE INDEX IF NOT EXISTS idx_github_repositories_project_id ON github_repositories(project_id);
+CREATE INDEX IF NOT EXISTS idx_github_repositories_github_repo_id ON github_repositories(github_repo_id);
+CREATE INDEX IF NOT EXISTS idx_github_repositories_owner ON github_repositories(owner);
+CREATE INDEX IF NOT EXISTS idx_github_repositories_full_name ON github_repositories(full_name);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION trigger_set_timestamp()
@@ -102,5 +140,11 @@ CREATE TRIGGER set_timestamp_workspaces
 DROP TRIGGER IF EXISTS set_timestamp_projects ON projects;
 CREATE TRIGGER set_timestamp_projects
     BEFORE UPDATE ON projects
+    FOR EACH ROW
+    EXECUTE PROCEDURE trigger_set_timestamp();
+
+DROP TRIGGER IF EXISTS set_timestamp_github_repositories ON github_repositories;
+CREATE TRIGGER set_timestamp_github_repositories
+    BEFORE UPDATE ON github_repositories
     FOR EACH ROW
     EXECUTE PROCEDURE trigger_set_timestamp();

@@ -1,5 +1,5 @@
 import { db } from '../config/database';
-import { Project, CreateProjectRequest, ProjectWithDetails, User, Workspace, ProjectWithLinearConnection } from './types';
+import { Project, CreateProjectRequest, ProjectWithDetails, ProjectWithRepository, User, Workspace, ProjectWithLinearConnection } from './types';
 import { LinearConnectionModel } from './LinearConnection';
 
 export class ProjectModel {
@@ -245,6 +245,7 @@ export class ProjectModel {
     return (result.rowCount ?? 0) > 0;
   }
 
+<<<<<<< HEAD
   // Get project by ID with Linear connection details
   static async findByIdWithLinearConnection(id: string): Promise<ProjectWithLinearConnection | null> {
     const projectWithDetails = await this.findByIdWithDetails(id);
@@ -274,5 +275,62 @@ export class ProjectModel {
     );
 
     return projectsWithLinear;
+  }
+
+
+  // Get project by ID with details and GitHub repository
+  static async findByIdWithRepository(id: string): Promise<ProjectWithRepository | null> {
+    const result = await db.query(
+      `SELECT p.*,
+              JSON_BUILD_OBJECT(
+                'id', w.id,
+                'name', w.name,
+                'description', w.description,
+                'owner_id', w.owner_id,
+                'created_at', w.created_at,
+                'updated_at', w.updated_at
+              ) as workspace,
+              JSON_BUILD_OBJECT(
+                'id', u.id,
+                'github_id', u.github_id,
+                'username', u.username,
+                'email', u.email,
+                'avatar_url', u.avatar_url,
+                'name', u.name,
+                'created_at', u.created_at,
+                'updated_at', u.updated_at
+              ) as owner,
+              CASE
+                WHEN gr.id IS NOT NULL THEN
+                  JSON_BUILD_OBJECT(
+                    'id', gr.id,
+                    'project_id', gr.project_id,
+                    'github_repo_id', gr.github_repo_id,
+                    'name', gr.name,
+                    'full_name', gr.full_name,
+                    'description', gr.description,
+                    'html_url', gr.html_url,
+                    'clone_url', gr.clone_url,
+                    'ssh_url', gr.ssh_url,
+                    'private', gr.private,
+                    'default_branch', gr.default_branch,
+                    'language', gr.language,
+                    'topics', gr.topics,
+                    'access_level', gr.access_level,
+                    'webhook_configured', gr.webhook_configured,
+                    'created_at', gr.created_at,
+                    'updated_at', gr.updated_at
+                  )
+                ELSE NULL
+              END as github_repository
+       FROM projects p
+       INNER JOIN workspaces w ON p.workspace_id = w.id
+       INNER JOIN users u ON p.owner_id = u.id
+       LEFT JOIN github_repositories gr ON p.id = gr.project_id
+       WHERE p.id = $1`,
+      [id]
+    );
+
+    return result.rows[0] || null;
   }
 }
