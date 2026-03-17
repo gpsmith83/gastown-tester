@@ -1,1 +1,129 @@
-<p>requirement works!</p>
+<div class="requirement-detail-container">
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Loading requirement...</p>
+  </div>
+
+  <!-- Error state -->
+  <div *ngIf="error" class="error-message">
+    <h3>Error</h3>
+    <p>{{ error }}</p>
+    <button class="retry-button" (click)="reloadRequirement()">Retry</button>
+  </div>
+
+  <!-- Requirement details -->
+  <div *ngIf="requirement && !isLoading" class="requirement-details">
+    <!-- Header -->
+    <div class="requirement-header">
+      <h1>{{ requirement.title }}</h1>
+      <div class="requirement-meta">
+        <span class="priority" [class]="'priority-' + requirement.priority">
+          {{ getPriorityLabel(requirement.priority) }}
+        </span>
+        <span class="type" [class]="'type-' + requirement.type">
+          {{ requirement.type }}
+        </span>
+        <span class="status" [class]="'status-' + requirement.status">
+          {{ readinessStatusLabel }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="requirement-content">
+      <h3>Description</h3>
+      <p *ngIf="requirement.description" class="description">{{ requirement.description }}</p>
+      <p *ngIf="!requirement.description" class="no-description">No description provided</p>
+    </div>
+
+    <!-- Project info -->
+    <div class="project-info" *ngIf="requirement.project">
+      <h3>Project</h3>
+      <div class="project-details">
+        <h4>{{ requirement.project.name }}</h4>
+        <p *ngIf="requirement.project.description">{{ requirement.project.description }}</p>
+      </div>
+    </div>
+
+    <!-- Author info -->
+    <div class="author-info" *ngIf="requirement.author">
+      <h3>Created by</h3>
+      <div class="author-details">
+        <img *ngIf="requirement.author.avatar_url"
+             [src]="requirement.author.avatar_url"
+             [alt]="requirement.author.name || requirement.author.username"
+             class="author-avatar">
+        <div class="author-text">
+          <p class="author-name">{{ requirement.author.name || requirement.author.username }}</p>
+          <p class="created-at">Created: {{ formatDateTime(requirement.created_at) }}</p>
+          <p class="updated-at" *ngIf="requirement.updated_at !== requirement.created_at">
+            Last updated: {{ formatDateTime(requirement.updated_at) }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- GitHub integration -->
+    <div class="github-info" *ngIf="requirement.github_issue_number || requirement.github_issue_url">
+      <h3>GitHub Integration</h3>
+      <div class="github-details">
+        <p *ngIf="requirement.github_issue_number">Issue #{{ requirement.github_issue_number }}</p>
+        <a *ngIf="requirement.github_issue_url"
+           [href]="requirement.github_issue_url"
+           target="_blank"
+           class="github-link">
+          View on GitHub
+        </a>
+      </div>
+    </div>
+
+    <!-- Refinement sessions -->
+    <div class="refinement-section">
+      <div class="section-header">
+        <h3>Requirement Refinement</h3>
+        <button class="start-refinement-button"
+                (click)="startRefinement()"
+                [disabled]="requirement.status === 'archived'">
+          Start New Refinement
+        </button>
+      </div>
+
+      <div class="refinement-description">
+        <p>Use AI-assisted refinement to clarify and improve this requirement through guided questions.</p>
+      </div>
+
+      <!-- Loading sessions -->
+      <div *ngIf="isLoadingSessions" class="loading-sessions">
+        <p>Loading refinement sessions...</p>
+      </div>
+
+      <!-- Previous sessions -->
+      <div *ngIf="!isLoadingSessions && refinementSessions.length > 0" class="sessions-list">
+        <h4>Previous Refinement Sessions</h4>
+        <div class="session-item"
+             *ngFor="let session of refinementSessions"
+             (click)="openRefinementSession(session.id)"
+             class="clickable">
+          <div class="session-header">
+            <h5>{{ session.title || 'Refinement Session' }}</h5>
+            <span class="session-status" [class]="'status-' + session.status">
+              {{ getSessionStatusLabel(session.status) }}
+            </span>
+          </div>
+          <div class="session-details">
+            <p>Started: {{ formatDateTime(session.started_at) }}</p>
+            <p *ngIf="session.completed_at">Completed: {{ formatDateTime(session.completed_at) }}</p>
+            <p *ngIf="session.message_count">{{ session.message_count }} messages</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- No sessions -->
+      <div *ngIf="!isLoadingSessions && refinementSessions.length === 0" class="no-sessions">
+        <p>No refinement sessions have been started for this requirement yet.</p>
+        <p>Click "Start New Refinement" above to begin clarifying this requirement with AI assistance.</p>
+      </div>
+    </div>
+  </div>
+</div>

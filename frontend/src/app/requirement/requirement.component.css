@@ -1,0 +1,383 @@
+.requirement-detail-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Loading and Error States */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.error-message h3 {
+  margin: 0 0 10px 0;
+}
+
+.retry-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.retry-button:hover {
+  background-color: #c82333;
+}
+
+/* Requirement Details */
+.requirement-details {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Header */
+.requirement-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  padding: 30px;
+}
+
+.requirement-header h1 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 2em;
+  font-weight: 600;
+}
+
+.requirement-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.requirement-meta span {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Priority styles */
+.priority-1 { background-color: #dc3545; color: white; }
+.priority-2 { background-color: #fd7e14; color: white; }
+.priority-3 { background-color: #ffc107; color: #333; }
+.priority-4 { background-color: #20c997; color: white; }
+.priority-5 { background-color: #6c757d; color: white; }
+
+/* Type styles */
+.type-feature { background-color: #007bff; color: white; }
+.type-bug { background-color: #dc3545; color: white; }
+.type-enhancement { background-color: #28a745; color: white; }
+.type-epic { background-color: #6f42c1; color: white; }
+
+/* Status styles */
+.status-draft { background-color: #6c757d; color: white; }
+.status-active { background-color: #28a745; color: white; }
+.status-completed { background-color: #007bff; color: white; }
+.status-archived { background-color: #343a40; color: white; }
+
+/* Content Sections */
+.requirement-content,
+.project-info,
+.author-info,
+.github-info,
+.refinement-section {
+  padding: 30px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.refinement-section {
+  border-bottom: none;
+}
+
+.requirement-content h3,
+.project-info h3,
+.author-info h3,
+.github-info h3,
+.refinement-section h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.3em;
+  font-weight: 600;
+}
+
+.description {
+  color: #666;
+  line-height: 1.6;
+  font-size: 1.05em;
+}
+
+.no-description {
+  color: #999;
+  font-style: italic;
+}
+
+/* Project Info */
+.project-details h4 {
+  margin: 0 0 8px 0;
+  color: #007bff;
+  font-size: 1.1em;
+}
+
+.project-details p {
+  margin: 0;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* Author Info */
+.author-details {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.author-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #dee2e6;
+}
+
+.author-text p {
+  margin: 0 0 5px 0;
+  line-height: 1.4;
+}
+
+.author-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.1em;
+}
+
+.created-at,
+.updated-at {
+  color: #666;
+  font-size: 0.9em;
+}
+
+/* GitHub Info */
+.github-details p {
+  margin: 0 0 8px 0;
+  color: #666;
+}
+
+.github-link {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.github-link:hover {
+  text-decoration: underline;
+}
+
+/* Refinement Section */
+.section-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 15px;
+  gap: 20px;
+}
+
+.start-refinement-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.start-refinement-button:hover {
+  background-color: #0056b3;
+}
+
+.start-refinement-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.refinement-description {
+  margin-bottom: 25px;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* Sessions List */
+.loading-sessions {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+.sessions-list h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+.session-item {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.session-item:hover {
+  background-color: #e9ecef;
+  border-color: #007bff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.session-item .session-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.session-item h5 {
+  margin: 0;
+  color: #333;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.session-status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.session-details {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.session-details p {
+  margin: 0;
+  color: #666;
+  font-size: 0.85em;
+}
+
+/* No Sessions */
+.no-sessions {
+  text-align: center;
+  padding: 30px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  color: #666;
+}
+
+.no-sessions p {
+  margin: 0 0 10px 0;
+  line-height: 1.5;
+}
+
+.no-sessions p:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .requirement-detail-container {
+    padding: 15px;
+  }
+
+  .requirement-header {
+    padding: 20px;
+  }
+
+  .requirement-header h1 {
+    font-size: 1.6em;
+  }
+
+  .requirement-meta {
+    gap: 8px;
+  }
+
+  .requirement-content,
+  .project-info,
+  .author-info,
+  .github-info,
+  .refinement-section {
+    padding: 20px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
+  .start-refinement-button {
+    width: 100%;
+  }
+
+  .author-details {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .session-details {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
+/* Clickable items */
+.clickable {
+  cursor: pointer;
+}

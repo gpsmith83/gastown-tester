@@ -1,0 +1,109 @@
+<div class="refinement-container">
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Loading refinement session...</p>
+  </div>
+
+  <!-- Error state -->
+  <div *ngIf="error" class="error-message">
+    <h3>Error</h3>
+    <p>{{ error }}</p>
+    <button class="retry-button" (click)="loadExistingSession()" *ngIf="sessionId">Retry</button>
+    <button class="retry-button" (click)="loadRequirement()" *ngIf="!sessionId && requirementId">Retry</button>
+  </div>
+
+  <!-- Requirement info (when no session exists yet) -->
+  <div *ngIf="requirement && !session && !isLoading" class="requirement-info">
+    <h2>{{ requirement.title }}</h2>
+    <p *ngIf="requirement.description" class="requirement-description">{{ requirement.description }}</p>
+
+    <div class="requirement-meta">
+      <span class="priority">Priority: {{ requirement.priority }}</span>
+      <span class="type">Type: {{ requirement.type }}</span>
+      <span class="status">Status: {{ requirement.status }}</span>
+    </div>
+
+    <div class="start-refinement">
+      <h3>Start Refinement Session</h3>
+      <p>Click below to begin refining this requirement. The AI will ask questions to help clarify and improve the specification.</p>
+      <button class="start-button" (click)="startRefinement()" [disabled]="isLoading">
+        Start Refinement
+      </button>
+    </div>
+  </div>
+
+  <!-- Active refinement session -->
+  <div *ngIf="session && !isLoading" class="session-container">
+    <!-- Session header -->
+    <div class="session-header">
+      <h2>{{ session.title || 'Refinement Session' }}</h2>
+      <div class="session-meta">
+        <span class="requirement-title">{{ session.requirement.title }}</span>
+        <span class="session-status" [class]="'status-' + session.status">{{ session.status }}</span>
+        <span class="started-at">Started: {{ session.started_at | date:'medium' }}</span>
+      </div>
+    </div>
+
+    <!-- Conversation history -->
+    <div class="messages-container" #messagesContainer>
+      <div
+        *ngFor="let message of messages; trackBy: trackByMessageId"
+        class="message"
+        [class.user-message]="isUserMessage(message)"
+        [class.ai-message]="isAIMessage(message)"
+      >
+        <div class="message-header">
+          <span class="message-author">{{ getMessageAuthor(message) }}</span>
+          <span class="message-time">{{ getMessageTimeString(message) }}</span>
+        </div>
+        <div class="message-content">{{ message.content }}</div>
+      </div>
+
+      <!-- Sending indicator -->
+      <div *ngIf="isSending" class="message ai-message sending">
+        <div class="message-header">
+          <span class="message-author">AI Assistant</span>
+          <span class="message-time">Thinking...</span>
+        </div>
+        <div class="message-content">
+          <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message input -->
+    <div class="message-input-container" *ngIf="session.status === 'active'">
+      <div class="input-wrapper">
+        <textarea
+          [(ngModel)]="newMessage"
+          placeholder="Type your response... (Ctrl+Enter to send)"
+          class="message-input"
+          rows="3"
+          [disabled]="isSending"
+          (keydown)="onKeyDown($event)"
+        ></textarea>
+        <button
+          class="send-button"
+          (click)="sendMessage()"
+          [disabled]="!newMessage.trim() || isSending"
+        >
+          Send
+        </button>
+      </div>
+      <div class="input-hint">
+        Press Ctrl+Enter to send your message
+      </div>
+    </div>
+
+    <!-- Session completed state -->
+    <div *ngIf="session.status === 'completed'" class="session-completed">
+      <h3>Refinement Complete</h3>
+      <p>This refinement session has been completed. The conversation history is preserved above.</p>
+    </div>
+  </div>
+</div>
