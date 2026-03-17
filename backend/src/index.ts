@@ -19,6 +19,7 @@ import aiRoutes from './routes/ai';
 import requirementRoutes from './routes/requirements';
 import linearRoutes from './routes/linear';
 import { globalAIService } from './services/ai-provider';
+import { sanitizeResponse } from './middleware/sanitizeResponse';
 
 // Initialize Express app
 const app = express();
@@ -39,7 +40,7 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:4200',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Project-Id']
 }));
 
 // Security headers middleware (updated for frontend integration)
@@ -95,6 +96,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   console.log(`[${timestamp}] ${req.method} ${req.path}`);
   next();
 });
+
+// Response sanitization middleware (prevents exposure of sensitive data)
+app.use(sanitizeResponse);
 
 // Routes
 

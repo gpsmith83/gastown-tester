@@ -138,6 +138,26 @@ export class AIService {
   getRecentUsage(limit?: number) {
     return this.usageTracker.getRecentUsage(limit);
   }
+
+  /**
+   * Gets usage statistics filtered by user's accessible projects
+   * @param timeframe Optional timeframe to filter by
+   * @param userProjectIds Array of project IDs the user has access to
+   * @returns Usage statistics accessible to the user
+   */
+  getUsageStatsForUser(timeframe?: { start: Date; end: Date }, userProjectIds?: string[]) {
+    return this.usageTracker.getUsageStatsForUser(timeframe, userProjectIds);
+  }
+
+  /**
+   * Gets recent usage entries filtered by user's accessible projects
+   * @param limit Number of entries to return
+   * @param userProjectIds Array of project IDs the user has access to
+   * @returns Recent usage metadata accessible to the user
+   */
+  getRecentUsageForUser(limit?: number, userProjectIds?: string[]) {
+    return this.usageTracker.getRecentUsageForUser(limit, userProjectIds);
+  }
 }
 
 // Global AI service instance
