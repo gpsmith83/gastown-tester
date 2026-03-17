@@ -90,6 +90,25 @@ export class AIUsageTracker {
   }
 
   /**
+   * Gets recent usage statistics filtered by user access
+   * Only returns entries for projects the user has access to
+   * @param limit Number of entries to return (default: 100)
+   * @param userProjectIds Array of project IDs the user has access to
+   * @returns Array of recent usage metadata accessible to the user
+   */
+  getRecentUsageForUser(
+    limit: number = 100,
+    userProjectIds: string[] = []
+  ): AIProviderUsageMetadata[] {
+    return this.usageLog
+      .filter((entry) => {
+        // Include entries without projectId (global usage) or entries for projects user has access to
+        return !entry.projectId || userProjectIds.includes(entry.projectId);
+      })
+      .slice(-limit);
+  }
+
+  /**
    * Gets usage statistics for a specific provider
    * @param provider Provider type to filter by
    * @param limit Number of entries to return (default: 100)
@@ -121,6 +140,65 @@ export class AIUsageTracker {
 
     if (timeframe) {
       relevantUsage = this.usageLog.filter(
+        (entry) =>
+          entry.timestamp >= timeframe.start && entry.timestamp <= timeframe.end
+      );
+    }
+
+    const totalCalls = relevantUsage.length;
+    const successfulCalls = relevantUsage.filter((entry) => entry.success).length;
+    const failedCalls = totalCalls - successfulCalls;
+    const totalTokens = relevantUsage.reduce(
+      (sum, entry) => sum + entry.totalTokens,
+      0
+    );
+    const averageLatency = totalCalls > 0
+      ? relevantUsage.reduce((sum, entry) => sum + entry.latencyMs, 0) / totalCalls
+      : 0;
+
+    const byProvider: Record<string, { calls: number; tokens: number }> = {};
+    for (const entry of relevantUsage) {
+      if (!byProvider[entry.provider]) {
+        byProvider[entry.provider] = { calls: 0, tokens: 0 };
+      }
+      byProvider[entry.provider].calls++;
+      byProvider[entry.provider].tokens += entry.totalTokens;
+    }
+
+    return {
+      totalCalls,
+      successfulCalls,
+      failedCalls,
+      totalTokens,
+      averageLatency,
+      byProvider,
+    };
+  }
+
+  /**
+   * Gets aggregated usage statistics filtered by user access
+   * @param timeframe Time period to aggregate (optional)
+   * @param userProjectIds Array of project IDs the user has access to
+   * @returns Aggregated usage statistics accessible to the user
+   */
+  getUsageStatsForUser(
+    timeframe?: { start: Date; end: Date },
+    userProjectIds: string[] = []
+  ): {
+    totalCalls: number;
+    successfulCalls: number;
+    failedCalls: number;
+    totalTokens: number;
+    averageLatency: number;
+    byProvider: Record<string, { calls: number; tokens: number }>;
+  } {
+    let relevantUsage = this.usageLog.filter((entry) => {
+      // Include entries without projectId (global usage) or entries for projects user has access to
+      return !entry.projectId || userProjectIds.includes(entry.projectId);
+    });
+
+    if (timeframe) {
+      relevantUsage = relevantUsage.filter(
         (entry) =>
           entry.timestamp >= timeframe.start && entry.timestamp <= timeframe.end
       );

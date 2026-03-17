@@ -22,6 +22,7 @@ import githubRepositoryRoutes from './routes/github-repositories';
 import jobRoutes from './routes/jobs';
 import contextSourceRoutes from './routes/context-sources';
 import { globalAIService } from './services/ai-provider';
+import { sanitizeResponse } from './middleware/sanitizeResponse';
 
 // Import correlation middleware and structured logging
 import { correlationMiddleware } from './middleware/correlation';
@@ -46,7 +47,7 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:4200',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Project-Id']
 }));
 
 // Security headers middleware (updated for frontend integration)
@@ -111,6 +112,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   });
   next();
 });
+
+// Response sanitization middleware (prevents exposure of sensitive data)
+app.use(sanitizeResponse);
 
 // Routes
 
