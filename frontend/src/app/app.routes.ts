@@ -9,6 +9,6 @@ export const routes: Routes = [
   { path: 'signin', component: SigninComponent },
   { path: 'workspace', component: WorkspaceComponent },
   { path: 'project', component: ProjectComponent },
-  { path: 'requirement', component: RequirementComponent },
+  { path: 'requirement/:id', component: RequirementComponent },
   { path: '**', redirectTo: '/signin' }
 ];

@@ -1,20 +1,21 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import {
   Requirement,
   RequirementWithDetails,
   CreateRequirementRequest,
   RequirementsResponse,
-  RequirementResponse
+  RequirementResponse,
+  ApiResponse
 } from '../models/requirement.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RequirementService {
-  private apiUrl = 'http://localhost:3000/api/requirements';
+  private readonly API_BASE = 'http://localhost:3000/api/requirements';
   private _requirements = new BehaviorSubject<RequirementWithDetails[]>([]);
 
   // Observable for components to subscribe to requirement list changes
@@ -22,49 +23,75 @@ export class RequirementService {
 
   constructor(private http: HttpClient) {}
 
-  // Get all requirements for the current user
-  getRequirements(): Observable<RequirementWithDetails[]> {
-    return this.http.get<RequirementsResponse>(this.apiUrl, { withCredentials: true })
+  /**
+   * Get all requirements accessible to the current user
+   */
+  getAllRequirements(): Observable<RequirementWithDetails[]> {
+    return this.http.get<RequirementsResponse>(this.API_BASE, { withCredentials: true })
       .pipe(
         map(response => {
           this._requirements.next(response.requirements);
           return response.requirements;
+        }),
+        catchError(error => {
+          console.error('Failed to fetch requirements:', error);
+          return throwError(() => error);
         })
       );
   }
 
-  // Get requirements for a specific project
+  /**
+   * Get all requirements for a specific project
+   */
   getProjectRequirements(projectId: string): Observable<RequirementWithDetails[]> {
-    return this.http.get<RequirementsResponse>(`${this.apiUrl}/project/${projectId}`, { withCredentials: true })
+    return this.http.get<RequirementsResponse>(`${this.API_BASE}/project/${projectId}`, { withCredentials: true })
       .pipe(
-        map(response => response.requirements)
+        map(response => response.requirements),
+        catchError(error => {
+          console.error('Failed to fetch project requirements:', error);
+          return throwError(() => error);
+        })
       );
   }
 
-  // Get a specific requirement by ID
+  /**
+   * Get a specific requirement by ID
+   */
   getRequirement(id: string): Observable<RequirementWithDetails> {
-    return this.http.get<RequirementResponse>(`${this.apiUrl}/${id}`, { withCredentials: true })
+    return this.http.get<RequirementResponse>(`${this.API_BASE}/${id}`, { withCredentials: true })
       .pipe(
-        map(response => response.requirement)
+        map(response => response.requirement),
+        catchError(error => {
+          console.error('Failed to fetch requirement:', error);
+          return throwError(() => error);
+        })
       );
   }
 
-  // Create a new requirement
+  /**
+   * Create a new requirement
+   */
   createRequirement(data: CreateRequirementRequest): Observable<RequirementWithDetails> {
-    return this.http.post<RequirementResponse>(this.apiUrl, data, { withCredentials: true })
+    return this.http.post<RequirementResponse>(this.API_BASE, data, { withCredentials: true })
       .pipe(
         map(response => {
           // Add the new requirement to the current list
           const currentRequirements = this._requirements.value;
           this._requirements.next([response.requirement, ...currentRequirements]);
           return response.requirement;
+        }),
+        catchError(error => {
+          console.error('Failed to create requirement:', error);
+          return throwError(() => error);
         })
       );
   }
 
-  // Update a requirement
+  /**
+   * Update an existing requirement
+   */
   updateRequirement(id: string, data: Partial<CreateRequirementRequest>): Observable<RequirementWithDetails> {
-    return this.http.put<RequirementResponse>(`${this.apiUrl}/${id}`, data, { withCredentials: true })
+    return this.http.put<RequirementResponse>(`${this.API_BASE}/${id}`, data, { withCredentials: true })
       .pipe(
         map(response => {
           // Update the requirement in the current list
@@ -74,33 +101,48 @@ export class RequirementService {
           );
           this._requirements.next(updatedRequirements);
           return response.requirement;
+        }),
+        catchError(error => {
+          console.error('Failed to update requirement:', error);
+          return throwError(() => error);
         })
       );
   }
 
-  // Update requirement status
-  updateRequirementStatus(id: string, status: 'draft' | 'active' | 'completed' | 'archived'): Observable<Requirement> {
-    return this.http.patch<{ requirement: Requirement }>(`${this.apiUrl}/${id}/status`, { status }, { withCredentials: true })
+  /**
+   * Delete a requirement
+   */
+  deleteRequirement(id: string): Observable<boolean> {
+    return this.http.delete<ApiResponse<any>>(`${this.API_BASE}/${id}`, { withCredentials: true })
       .pipe(
-        map(response => response.requirement)
-      );
-  }
-
-  // Delete a requirement (soft delete)
-  deleteRequirement(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`, { withCredentials: true })
-      .pipe(
-        map(() => {
+        map(response => {
           // Remove the requirement from the current list
           const currentRequirements = this._requirements.value;
           const filteredRequirements = currentRequirements.filter(req => req.id !== id);
           this._requirements.next(filteredRequirements);
+          return true;
+        }),
+        catchError(error => {
+          console.error('Failed to delete requirement:', error);
+          return throwError(() => error);
         })
       );
   }
 
-  // Clear the requirements cache (useful for component cleanup)
-  clearRequirements(): void {
-    this._requirements.next([]);
+  /**
+   * Search requirements by text
+   */
+  searchRequirements(query: string): Observable<RequirementWithDetails[]> {
+    return this.http.get<RequirementsResponse>(`${this.API_BASE}/search`, {
+      params: { q: query },
+      withCredentials: true
+    })
+      .pipe(
+        map(response => response.requirements),
+        catchError(error => {
+          console.error('Failed to search requirements:', error);
+          return throwError(() => error);
+        })
+      );
   }
 }
