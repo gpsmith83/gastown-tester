@@ -15,6 +15,8 @@ import { testDatabaseConnection, initializeDatabase, isDatabaseAvailable } from 
 import authRoutes from './routes/auth';
 import workspaceRoutes from './routes/workspaces';
 import projectRoutes from './routes/projects';
+import aiRoutes from './routes/ai';
+import { globalAIService } from './services/ai-provider';
 
 // Initialize Express app
 const app = express();
@@ -116,7 +118,8 @@ app.get('/', (req: Request, res: Response) => {
       health: '/health',
       auth: '/auth',
       workspaces: '/api/workspaces',
-      projects: '/api/projects'
+      projects: '/api/projects',
+      ai: '/api/ai'
     }
   });
 });
@@ -125,6 +128,7 @@ app.get('/', (req: Request, res: Response) => {
 app.use('/auth', authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -176,6 +180,15 @@ async function startServer() {
       console.warn('⚠️ Make sure PostgreSQL is running and DATABASE_URL is configured');
     }
 
+    // Initialize AI service
+    try {
+      await globalAIService.initialize();
+      console.log('🤖 AI provider initialized successfully');
+    } catch (error) {
+      console.warn('⚠️ AI provider initialization failed:', error instanceof Error ? error.message : 'Unknown error');
+      console.warn('⚠️ AI endpoints will not work properly. Check AI_PROVIDER_* environment variables.');
+    }
+
     // Start Express server
     const server = app.listen(PORT, () => {
       console.log('🚀 Gastown Tester API server running on port', PORT);
@@ -183,6 +196,7 @@ async function startServer() {
       console.log('🔐 Auth endpoints:', `http://localhost:${PORT}/auth`);
       console.log('🏢 Workspaces API:', `http://localhost:${PORT}/api/workspaces`);
       console.log('📁 Projects API:', `http://localhost:${PORT}/api/projects`);
+      console.log('🤖 AI Provider API:', `http://localhost:${PORT}/api/ai`);
       console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
       console.log('🎯 Frontend URL:', process.env.FRONTEND_URL || 'http://localhost:4200');
     });
