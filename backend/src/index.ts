@@ -16,6 +16,7 @@ import authRoutes from './routes/auth';
 import workspaceRoutes from './routes/workspaces';
 import projectRoutes from './routes/projects';
 import aiRoutes from './routes/ai';
+import aiAuditRoutes from './routes/ai-audit';
 import requirementRoutes from './routes/requirements';
 import linearRoutes from './routes/linear';
 import githubRepositoryRoutes from './routes/github-repositories';
@@ -138,6 +139,7 @@ app.get('/', (req: Request, res: Response) => {
       workspaces: '/api/workspaces',
       projects: '/api/projects',
       ai: '/api/ai',
+      'ai-audit': '/api/ai/audit',
       requirements: '/api/requirements',
       linear: '/api/linear',
       githubRepositories: '/api/github-repositories',
@@ -152,6 +154,7 @@ app.use('/auth', authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/ai/audit', aiAuditRoutes);
 app.use('/api/requirements', requirementRoutes);
 app.use('/api/linear', linearRoutes);
 app.use('/api/github-repositories', githubRepositoryRoutes);
@@ -233,6 +236,7 @@ async function startServer() {
     // Start Express server
     const server = app.listen(PORT, () => {
 <<<<<<< HEAD
+<<<<<<< HEAD
       appLogger.info('Gastown Tester API server started', {
         operation: 'server_start',
         port: PORT,
@@ -251,6 +255,20 @@ async function startServer() {
           contextSources: `http://localhost:${PORT}/api/context-sources`
         }
       });
+=======
+      console.log('🚀 Gastown Tester API server running on port', PORT);
+      console.log('📱 Health check:', `http://localhost:${PORT}/health`);
+      console.log('🔐 Auth endpoints:', `http://localhost:${PORT}/auth`);
+      console.log('🏢 Workspaces API:', `http://localhost:${PORT}/api/workspaces`);
+      console.log('📁 Projects API:', `http://localhost:${PORT}/api/projects`);
+      console.log('🤖 AI Provider API:', `http://localhost:${PORT}/api/ai`);
+      console.log('📊 AI Audit API:', `http://localhost:${PORT}/api/ai/audit`);
+      console.log('📋 Requirements API:', `http://localhost:${PORT}/api/requirements`);
+      console.log('🔗 Linear API:', `http://localhost:${PORT}/api/linear`);
+      console.log('🐙 GitHub Repositories API:', `http://localhost:${PORT}/api/github-repositories`);
+      console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
+      console.log('🎯 Frontend URL:', process.env.FRONTEND_URL || 'http://localhost:4200');
+>>>>>>> 5570242 (feat: implement full provider payload audit retention and retrieval (B-706))
     });
 
     return server;
