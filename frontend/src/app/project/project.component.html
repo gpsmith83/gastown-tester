@@ -361,4 +361,108 @@
       </div>
     </div>
   </main>
+
+  <!-- Create Requirement Modal -->
+  <div class="modal-overlay" *ngIf="showCreateRequirementModal" (click)="closeCreateRequirementModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Create New Requirement</h2>
+        <button class="close-btn" (click)="closeCreateRequirementModal()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Error display -->
+        <div class="error-message" *ngIf="createRequirementError">
+          {{createRequirementError}}
+        </div>
+
+        <form (ngSubmit)="submitCreateRequirement()" #createForm="ngForm">
+          <!-- Title field -->
+          <div class="form-group">
+            <label for="req-title">Title <span class="required">*</span></label>
+            <input
+              id="req-title"
+              type="text"
+              [(ngModel)]="createRequirementForm.title"
+              name="title"
+              placeholder="Enter requirement title"
+              required
+              maxlength="255"
+              [disabled]="creatingRequirement"
+            >
+          </div>
+
+          <!-- Description field -->
+          <div class="form-group">
+            <label for="req-description">Description</label>
+            <textarea
+              id="req-description"
+              [(ngModel)]="createRequirementForm.description"
+              name="description"
+              placeholder="Enter requirement description (optional)"
+              rows="4"
+              [disabled]="creatingRequirement"
+            ></textarea>
+          </div>
+
+          <!-- Type field -->
+          <div class="form-group">
+            <label for="req-type">Type</label>
+            <select
+              id="req-type"
+              [(ngModel)]="createRequirementForm.type"
+              name="type"
+              [disabled]="creatingRequirement"
+            >
+              <option value="feature">Feature</option>
+              <option value="bug">Bug</option>
+              <option value="enhancement">Enhancement</option>
+              <option value="epic">Epic</option>
+            </select>
+          </div>
+
+          <!-- Priority field -->
+          <div class="form-group">
+            <label for="req-priority">Priority</label>
+            <select
+              id="req-priority"
+              [(ngModel)]="createRequirementForm.priority"
+              name="priority"
+              [disabled]="creatingRequirement"
+            >
+              <option value="1">1 - Highest</option>
+              <option value="2">2 - High</option>
+              <option value="3">3 - Medium</option>
+              <option value="4">4 - Low</option>
+              <option value="5">5 - Lowest</option>
+            </select>
+          </div>
+
+          <!-- Form actions -->
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="cancel-btn"
+              (click)="closeCreateRequirementModal()"
+              [disabled]="creatingRequirement"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="create-btn"
+              [disabled]="!createRequirementForm.title.trim() || creatingRequirement"
+            >
+              <span *ngIf="creatingRequirement">Creating...</span>
+              <span *ngIf="!creatingRequirement">Create Requirement</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </div>
