@@ -3,6 +3,7 @@ import { requireAuth } from '../config/auth';
 import { ProjectModel } from '../models/Project';
 import { LinearConnectionModel } from '../models/LinearConnection';
 import { LinearService } from '../services/LinearService';
+import { SecretManager } from '../services/SecretManager';
 import {
   User,
   CreateLinearConnectionRequest,
@@ -44,7 +45,7 @@ router.get('/projects/:projectId/connection', async (req: Request, res: Response
       connection: connectionData
     });
   } catch (error) {
-    console.error('Error fetching Linear connection:', error);
+    console.error('[LINEAR_ROUTES] Error fetching Linear connection:', SecretManager.redactSensitiveData(error));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch Linear connection'
@@ -116,7 +117,12 @@ router.post('/projects/:projectId/connection', async (req: Request, res: Respons
       message: 'Linear connection created and validated successfully'
     });
   } catch (error) {
-    console.error('Error creating Linear connection:', error);
+    console.error('[LINEAR_ROUTES] Error creating Linear connection:', SecretManager.redactSensitiveData({
+      error,
+      projectId: req.params.projectId,
+      // Don't log the request body as it contains the API token
+      hasRequestBody: !!req.body
+    }));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to create Linear connection'
@@ -165,7 +171,11 @@ router.put('/projects/:projectId/connection', async (req: Request, res: Response
       message: 'Linear connection updated successfully. Re-validation needed.'
     });
   } catch (error) {
-    console.error('Error updating Linear connection:', error);
+    console.error('[LINEAR_ROUTES] Error updating Linear connection:', SecretManager.redactSensitiveData({
+      error,
+      projectId: req.params.projectId,
+      updateData: SecretManager.redactSensitiveData(req.body)
+    }));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to update Linear connection'
@@ -233,7 +243,12 @@ router.post('/projects/:projectId/connection/validate', async (req: Request, res
         : 'Linear connection validation failed'
     });
   } catch (error) {
-    console.error('Error validating Linear connection:', error);
+    console.error('[LINEAR_ROUTES] Error validating Linear connection:', SecretManager.redactSensitiveData({
+      error,
+      projectId: req.params.projectId,
+      // Don't log the request body as it contains the API token
+      hasApiToken: !!req.body.api_token
+    }));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to validate Linear connection'
@@ -268,7 +283,10 @@ router.delete('/projects/:projectId/connection', async (req: Request, res: Respo
       message: 'Linear connection deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting Linear connection:', error);
+    console.error('[LINEAR_ROUTES] Error deleting Linear connection:', SecretManager.redactSensitiveData({
+      error,
+      projectId: req.params.projectId
+    }));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to delete Linear connection'

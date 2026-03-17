@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../config/auth';
 import { RequirementModel } from '../models/Requirement';
 import { ProjectModel } from '../models/Project';
+import { SecretManager } from '../services/SecretManager';
 import { CreateRequirementRequest } from '../models/types';
 import { User } from '../models/types';
 
@@ -21,7 +22,7 @@ router.get('/', async (req: Request, res: Response) => {
       total: requirements.length
     });
   } catch (error) {
-    console.error('Error fetching requirements:', error);
+    console.error('[REQUIREMENT_ROUTES] Error fetching requirements:', SecretManager.redactSensitiveData(error));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch requirements'
@@ -52,7 +53,7 @@ router.get('/project/:projectId', async (req: Request, res: Response) => {
       total: requirements.length
     });
   } catch (error) {
-    console.error('Error fetching project requirements:', error);
+    console.error('[REQUIREMENT_ROUTES] Error fetching project requirements:', SecretManager.redactSensitiveData(error));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch project requirements'
@@ -134,7 +135,10 @@ router.post('/', async (req: Request, res: Response) => {
       message: 'Requirement created successfully'
     });
   } catch (error) {
-    console.error('Error creating requirement:', error);
+    console.error('[REQUIREMENT_ROUTES] Error creating requirement:', SecretManager.redactSensitiveData({
+      error,
+      requestData: SecretManager.redactSensitiveData(req.body)
+    }));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to create requirement'
@@ -169,7 +173,10 @@ router.get('/:id', async (req: Request, res: Response) => {
       requirement
     });
   } catch (error) {
-    console.error('Error fetching requirement:', error);
+    console.error('[REQUIREMENT_ROUTES] Error fetching requirement:', SecretManager.redactSensitiveData({
+      error,
+      requirementId: req.params.id
+    }));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch requirement'
@@ -256,7 +263,11 @@ router.put('/:id', async (req: Request, res: Response) => {
       message: 'Requirement updated successfully'
     });
   } catch (error) {
-    console.error('Error updating requirement:', error);
+    console.error('[REQUIREMENT_ROUTES] Error updating requirement:', SecretManager.redactSensitiveData({
+      error,
+      requirementId: req.params.id,
+      updateData: SecretManager.redactSensitiveData(req.body)
+    }));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to update requirement'
