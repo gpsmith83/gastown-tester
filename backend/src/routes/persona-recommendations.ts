@@ -75,10 +75,19 @@ router.get('/:requirement_id', async (req: Request, res: Response) => {
 
     console.log(`[PERSONA_RECOMMENDATIONS] Getting recommendation for requirement ${requirement_id} by user ${user.id}`);
 
+    let currentContext;
+    try {
+      currentContext = req.query.context ? JSON.parse(req.query.context as string) : undefined;
+    } catch (error) {
+      return res.status(400).json({
+        error: 'Invalid JSON format in context parameter'
+      });
+    }
+
     const requestData: GetPersonaRecommendationRequest = {
       requirement_id,
       session_id,
-      current_context: req.query.context ? JSON.parse(req.query.context as string) : undefined
+      current_context: currentContext
     };
 
     // Get persona recommendation
