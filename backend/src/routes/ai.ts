@@ -86,33 +86,16 @@ router.post('/complete', async (req: Request, res: Response) => {
     const jobId = req.headers['x-job-id'] as string;
     const auditLevel = (req.headers['x-audit-level'] as 'full' | 'metadata-only' | 'disabled') || 'full';
 
-<<<<<<< HEAD
+    const providerInfo = globalAIService.getProviderInfo();
+
     logger.info('Sending request to AI provider', {
       operation: 'ai_completion',
       userId,
-      projectId,
-      messageCount: request.messages.length
+      projectId: requirementId,
+      messageCount: request.messages.length,
+      correlationId,
+      auditLevel
     });
-
-    const response = await globalAIService.complete(request, {
-      userId,
-      projectId,
-    });
-
-    logger.info('AI completion successful', {
-      operation: 'ai_completion',
-      responseTokens: response.usage?.totalTokens || 0,
-      model: response.model
-    });
-
-    res.json(response);
-  } catch (error) {
-    logger.error('AI completion failed', {
-      operation: 'ai_completion',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      errorName: error instanceof Error ? error.name : 'UnknownError'
-=======
-    const providerInfo = globalAIService.getProviderInfo();
 
     // Execute AI completion with full audit logging
     const result = await AIAuditService.executeWithAudit(
@@ -140,6 +123,14 @@ router.post('/complete', async (req: Request, res: Response) => {
     const sanitizedRequest = AIAuditService.sanitizeRequestForLogging(request);
     const sanitizedResponse = AIAuditService.sanitizeForLogging(result.response);
 
+    logger.info('AI completion successful', {
+      operation: 'ai_completion',
+      audit_id: result.audit_id,
+      responseTokens: result.response.usage?.totalTokens || 0,
+      model: result.response.model,
+      correlationId
+    });
+
     console.log('[AI_COMPLETION]', {
       correlation_id: correlationId,
       audit_id: result.audit_id,
@@ -156,13 +147,19 @@ router.post('/complete', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    // Log error without sensitive content
+    logger.error('AI completion failed', {
+      operation: 'ai_completion',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+      correlationId: (req as any).correlationId
+    });
+
+    // Also log error without sensitive content for debugging
     console.error('[AI_ROUTE] Completion error (sanitized):', {
       error_type: error instanceof Error ? error.name : 'UnknownError',
       error_message: error instanceof Error ? error.message : 'Unknown error',
       correlation_id: (req as any).correlationId,
       provider_type: globalAIService.getProviderInfo()?.type
->>>>>>> 5570242 (feat: implement full provider payload audit retention and retrieval (B-706))
     });
 
     if (error instanceof Error && error.name === 'AIProviderError') {

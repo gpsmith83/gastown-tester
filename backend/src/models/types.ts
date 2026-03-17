@@ -307,3 +307,95 @@ export interface UpdateContextSelectionRequest {
     is_selected: boolean;
   }[];
 }
+
+// AI Provider Audit interfaces (B-706)
+export interface AIProviderAudit {
+  id: string;
+  requirement_id?: string;
+  user_id?: string;
+  provider_type: string;
+  provider_model?: string;
+  provider_endpoint?: string;
+  correlation_id?: string;
+  job_id?: string;
+  session_context?: any;
+  request_payload: any;
+  response_payload?: any;
+  response_status?: number;
+  request_tokens?: number;
+  response_tokens?: number;
+  total_tokens?: number;
+  latency_ms?: number;
+  audit_level: 'full' | 'metadata-only' | 'disabled';
+  retention_policy: 'standard' | 'extended' | 'minimal';
+  is_successful: boolean;
+  error_type?: string;
+  error_message?: string;
+  error_details?: any;
+  request_timestamp: Date;
+  response_timestamp?: Date;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CreateAIProviderAuditRequest {
+  requirement_id?: string;
+  user_id?: string;
+  provider_type: string;
+  provider_model?: string;
+  provider_endpoint?: string;
+  correlation_id?: string;
+  job_id?: string;
+  session_context?: any;
+  request_payload: any;
+  response_payload?: any;
+  response_status?: number;
+  request_tokens?: number;
+  response_tokens?: number;
+  total_tokens?: number;
+  latency_ms?: number;
+  audit_level?: 'full' | 'metadata-only' | 'disabled';
+  retention_policy?: 'standard' | 'extended' | 'minimal';
+  is_successful?: boolean;
+  error_type?: string;
+  error_message?: string;
+  error_details?: any;
+  request_timestamp?: Date;
+  response_timestamp?: Date;
+}
+
+export interface AIProviderAuditSummary {
+  id: string;
+  requirement_id?: string;
+  user_id?: string;
+  provider_type: string;
+  provider_model?: string;
+  date_bucket: Date;
+  total_requests: number;
+  successful_requests: number;
+  failed_requests: number;
+  total_request_tokens: number;
+  total_response_tokens: number;
+  total_tokens: number;
+  avg_latency_ms: number;
+  min_latency_ms: number;
+  max_latency_ms: number;
+  error_types: string[];
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface AIProviderAuditQuery {
+  requirement_id?: string;
+  user_id?: string;
+  provider_type?: string;
+  provider_model?: string;
+  correlation_id?: string;
+  job_id?: string;
+  is_successful?: boolean;
+  start_date?: Date;
+  end_date?: Date;
+  limit?: number;
+  offset?: number;
+  include_payloads?: boolean; // For security - default false
+}

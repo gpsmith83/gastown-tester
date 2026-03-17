@@ -235,8 +235,6 @@ async function startServer() {
 
     // Start Express server
     const server = app.listen(PORT, () => {
-<<<<<<< HEAD
-<<<<<<< HEAD
       appLogger.info('Gastown Tester API server started', {
         operation: 'server_start',
         port: PORT,
@@ -248,6 +246,7 @@ async function startServer() {
           workspaces: `http://localhost:${PORT}/api/workspaces`,
           projects: `http://localhost:${PORT}/api/projects`,
           ai: `http://localhost:${PORT}/api/ai`,
+          'ai-audit': `http://localhost:${PORT}/api/ai/audit`,
           requirements: `http://localhost:${PORT}/api/requirements`,
           linear: `http://localhost:${PORT}/api/linear`,
           githubRepositories: `http://localhost:${PORT}/api/github-repositories`,
@@ -255,20 +254,11 @@ async function startServer() {
           contextSources: `http://localhost:${PORT}/api/context-sources`
         }
       });
-=======
+
+      // Also log to console for development visibility
       console.log('🚀 Gastown Tester API server running on port', PORT);
-      console.log('📱 Health check:', `http://localhost:${PORT}/health`);
-      console.log('🔐 Auth endpoints:', `http://localhost:${PORT}/auth`);
-      console.log('🏢 Workspaces API:', `http://localhost:${PORT}/api/workspaces`);
-      console.log('📁 Projects API:', `http://localhost:${PORT}/api/projects`);
-      console.log('🤖 AI Provider API:', `http://localhost:${PORT}/api/ai`);
       console.log('📊 AI Audit API:', `http://localhost:${PORT}/api/ai/audit`);
-      console.log('📋 Requirements API:', `http://localhost:${PORT}/api/requirements`);
-      console.log('🔗 Linear API:', `http://localhost:${PORT}/api/linear`);
-      console.log('🐙 GitHub Repositories API:', `http://localhost:${PORT}/api/github-repositories`);
       console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
-      console.log('🎯 Frontend URL:', process.env.FRONTEND_URL || 'http://localhost:4200');
->>>>>>> 5570242 (feat: implement full provider payload audit retention and retrieval (B-706))
     });
 
     return server;

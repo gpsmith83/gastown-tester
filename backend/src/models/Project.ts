@@ -245,7 +245,6 @@ export class ProjectModel {
     return (result.rowCount ?? 0) > 0;
   }
 
-<<<<<<< HEAD
   // Get project by ID with Linear connection details
   static async findByIdWithLinearConnection(id: string): Promise<ProjectWithLinearConnection | null> {
     const projectWithDetails = await this.findByIdWithDetails(id);

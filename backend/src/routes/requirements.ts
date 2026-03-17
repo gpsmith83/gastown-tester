@@ -346,4 +346,216 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Get requirements summary statistics for a project
+router.get('/project/:projectId/summary', async (req: Request, res: Response) => {
+  try {
+    const user = req.user as User;
+    const { projectId } = req.params;
+
+    // Check if user has access to this project
+    const hasAccess = await ProjectModel.canUserAccess(projectId, user.id);
+    if (!hasAccess) {
+      return res.status(403).json({
+        error: 'Access Denied',
+        message: 'You do not have access to this project'
+      });
+    }
+
+    const summary = await RequirementModel.getProjectSummary(projectId);
+
+    res.json({
+      project_id: projectId,
+      summary,
+      generated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching project requirements summary:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to fetch project requirements summary'
+    });
+  }
+});
+
+// Get requirements summary statistics for user's accessible requirements
+router.get('/summary', async (req: Request, res: Response) => {
+  try {
+    const user = req.user as User;
+    const summary = await RequirementModel.getUserSummary(user.id);
+
+    res.json({
+      user_id: user.id,
+      summary,
+      generated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching user requirements summary:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to fetch user requirements summary'
+    });
+  }
+});
+
+// Get recent requirement activity for a project
+router.get('/project/:projectId/activity', async (req: Request, res: Response) => {
+  try {
+    const user = req.user as User;
+    const { projectId } = req.params;
+    const { limit = '10' } = req.query;
+
+    // Check if user has access to this project
+    const hasAccess = await ProjectModel.canUserAccess(projectId, user.id);
+    if (!hasAccess) {
+      return res.status(403).json({
+        error: 'Access Denied',
+        message: 'You do not have access to this project'
+      });
+    }
+
+    const activity = await RequirementModel.getProjectActivity(projectId, parseInt(limit as string));
+
+    res.json({
+      project_id: projectId,
+      activity,
+      limit: parseInt(limit as string),
+      fetched_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching project requirements activity:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to fetch project requirements activity'
+    });
+  }
+});
+
+// Get live dashboard data for user's accessible requirements
+router.get('/dashboard', async (req: Request, res: Response) => {
+  try {
+    const user = req.user as User;
+    const dashboard = await RequirementModel.getDashboardData(user.id);
+
+    res.json({
+      user_id: user.id,
+      dashboard,
+      generated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching requirements dashboard:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to fetch requirements dashboard'
+    });
+  }
+});
+
+// Server-Sent Events endpoint for live requirement updates
+router.get('/live-updates', async (req: Request, res: Response) => {
+  try {
+    const user = req.user as User;
+
+    // Set headers for SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
+
+    // Send initial connection event
+    res.write(`data: ${JSON.stringify({
+      type: 'connection',
+      message: 'Connected to live requirement updates',
+      user_id: user.id,
+      timestamp: new Date().toISOString()
+    })}\n\n`);
+
+    // Send initial dashboard data
+    const dashboard = await RequirementModel.getDashboardData(user.id);
+    res.write(`data: ${JSON.stringify({
+      type: 'dashboard_update',
+      data: dashboard,
+      timestamp: new Date().toISOString()
+    })}\n\n`);
+
+    // Keep connection alive with heartbeat every 30 seconds
+    const heartbeatInterval = setInterval(() => {
+      res.write(`data: ${JSON.stringify({
+        type: 'heartbeat',
+        timestamp: new Date().toISOString()
+      })}\n\n`);
+    }, 30000);
+
+    // Clean up on client disconnect
+    req.on('close', () => {
+      clearInterval(heartbeatInterval);
+      console.log(`Live updates connection closed for user ${user.id}`);
+    });
+
+    // For now, we'll just send periodic updates
+    // In a production system, you'd trigger these based on actual database changes
+    const updateInterval = setInterval(async () => {
+      try {
+        const updatedDashboard = await RequirementModel.getDashboardData(user.id);
+        res.write(`data: ${JSON.stringify({
+          type: 'dashboard_update',
+          data: updatedDashboard,
+          timestamp: new Date().toISOString()
+        })}\n\n`);
+      } catch (error) {
+        console.error('Error sending live update:', error);
+      }
+    }, 60000); // Update every minute
+
+    req.on('close', () => {
+      clearInterval(updateInterval);
+    });
+
+  } catch (error) {
+    console.error('Error setting up live updates:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to establish live updates connection'
+    });
+  }
+});
+
+// Get aggregated statistics across multiple projects
+router.get('/workspace-summary', async (req: Request, res: Response) => {
+  try {
+    const user = req.user as User;
+    const { workspace_id } = req.query;
+
+    if (!workspace_id) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'workspace_id parameter is required'
+      });
+    }
+
+    // Check if user has access to this workspace
+    const hasAccess = await RequirementModel.canUserAccessWorkspace(workspace_id as string, user.id);
+    if (!hasAccess) {
+      return res.status(403).json({
+        error: 'Access Denied',
+        message: 'You do not have access to this workspace'
+      });
+    }
+
+    const summary = await RequirementModel.getWorkspaceSummary(workspace_id as string);
+
+    res.json({
+      workspace_id,
+      summary,
+      generated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching workspace requirements summary:', error);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to fetch workspace requirements summary'
+    });
+  }
+});
+
 export default router;
