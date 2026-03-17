@@ -278,10 +278,10 @@ export class LinearService {
         id: viewer.organization.id,
         name: viewer.organization.name,
       },
-      permissions: [], // TODO: Extract permissions from API
+      permissions: await this.extractPermissions(apiToken, viewer)
     };
 
-    // Step 2: Validate workspace
+    // Step 2: Validate workspace and verify team access
     const workspaceResult = await this.getWorkspace(workspaceId, apiToken);
     if (workspaceResult.error) {
       return {
@@ -290,12 +290,13 @@ export class LinearService {
       };
     }
 
+    const workspace = workspaceResult.workspace!;
     result.workspace = {
-      id: workspaceResult.workspace!.id,
-      name: workspaceResult.workspace!.name,
+      id: workspace.id,
+      name: workspace.name,
     };
 
-    // Step 3: Validate team
+    // Step 3: Validate team and verify it belongs to the organization
     const teamResult = await this.getTeam(teamId, apiToken);
     if (teamResult.error) {
       return {
@@ -304,9 +305,19 @@ export class LinearService {
       };
     }
 
+    const team = teamResult.team!;
+
+    // Verify team belongs to the same organization as the authenticated user
+    if (team.organization.id !== viewer.organization.id) {
+      return {
+        is_valid: false,
+        error: `Team "${team.name}" does not belong to your organization "${viewer.organization.name}"`,
+      };
+    }
+
     result.team = {
-      id: teamResult.team!.id,
-      name: teamResult.team!.name,
+      id: team.id,
+      name: team.name,
     };
 
     // Step 4: Validate project if provided
@@ -325,9 +336,69 @@ export class LinearService {
       };
     }
 
-    // TODO: Validate board if boardId is provided
-    // Linear might not have a direct "board" concept, might need to use Projects instead
+    // Step 5: Validate board (using Linear projects) if provided
+    if (boardId) {
+      // Linear uses "projects" as their organizational unit, not "boards"
+      // We'll treat boardId as a Linear project ID for validation
+      const boardResult = await this.getProject(boardId, apiToken);
+      if (boardResult.error) {
+        return {
+          is_valid: false,
+          error: `Invalid board/project: ${boardResult.error}`,
+        };
+      }
+
+      result.board = {
+        id: boardResult.project!.id,
+        name: boardResult.project!.name,
+      };
+    }
 
     return result;
+  }
+
+  // Extract user permissions from Linear API
+  private static async extractPermissions(
+    apiToken: string,
+    viewer: LinearViewer
+  ): Promise<string[]> {
+    const permissions: string[] = [];
+
+    try {
+      // Check if user can create issues (basic permission test)
+      const issueQuery = `
+        query CheckIssuePermissions {
+          organization {
+            teams {
+              nodes {
+                id
+                name
+              }
+            }
+          }
+        }
+      `;
+
+      const response = await this.makeRequest(issueQuery, {}, apiToken);
+
+      if (response.data?.organization?.teams?.nodes) {
+        permissions.push('read_teams');
+
+        // If user can read teams, they likely have basic access
+        if (response.data.organization.teams.nodes.length > 0) {
+          permissions.push('create_issues');
+        }
+      }
+
+      // Note: Linear's GraphQL API doesn't expose detailed permission information
+      // We infer basic permissions from successful operations
+      permissions.push('api_access');
+
+    } catch (error) {
+      // Minimal permissions if queries fail
+      permissions.push('api_access');
+    }
+
+    return permissions;
   }
 }

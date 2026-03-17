@@ -83,7 +83,6 @@ export interface ProjectWithDetails extends Project {
   owner: User;
 }
 
-<<<<<<< HEAD
 export interface Requirement {
   id: string;
   title: string;
@@ -161,7 +160,6 @@ export interface GitHubRepository {
   updated_at: Date;
 }
 
-<<<<<<< HEAD
 // Request/Response DTOs for requirements
 export interface CreateRequirementRequest {
   title: string;
