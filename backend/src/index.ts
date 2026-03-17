@@ -236,7 +236,6 @@ async function startServer() {
 
     // Start Express server
     const server = app.listen(PORT, () => {
-<<<<<<< HEAD
       appLogger.info('Gastown Tester API server started', {
         operation: 'server_start',
         port: PORT,
