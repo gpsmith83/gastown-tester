@@ -4,6 +4,18 @@ Repository bootstrap and developer workflow foundation for a modern full-stack a
 
 ## Quick Start
 
+### Option 1: Docker Compose (Recommended)
+Complete environment with database included:
+
+```bash
+# Bootstrap and start with Docker
+npm run bootstrap
+npm run docker:up
+```
+
+### Option 2: Native Development
+Run services directly on your machine:
+
 ```bash
 # Bootstrap the development environment
 npm run bootstrap
@@ -33,6 +45,9 @@ npm run dev
 - **Package Manager:** npm workspaces
 - **API Framework:** Express.js
 - **Frontend Framework:** React + Vite
+- **Database:** PostgreSQL 15
+- **Cache/Queue:** Redis 7
+- **Container:** Docker Compose
 - **Testing:** Jest + Vitest
 - **Linting:** ESLint
 - **Build:** TypeScript compiler
@@ -58,16 +73,25 @@ npm run verify       # Full verification
 - Bootstrap and verification procedures
 - Development documentation
 
+✅ **B-006: Docker Compose local stack** (Complete)
+- Full containerized development environment
+- PostgreSQL database with initialization
+- Redis for job queue processing
+- Hot reload for all services
+- Comprehensive documentation and scripts
+
 🔄 **Next Steps:**
-- B-006: Docker Compose local stack
 - B-007: Local secrets and external access prerequisites
 - B-008: Worker runtime and job execution skeleton
 
 ## Getting Started
 
-1. **Prerequisites:** Node.js 18+, npm 9+
-2. **Bootstrap:** `npm run bootstrap`
-3. **Verify:** `npm run verify`
-4. **Develop:** `npm run dev`
+**Docker Compose (Recommended):**
+1. **Prerequisites:** Docker 20.10+, Docker Compose 2.0+, Node.js 18+, npm 9+
+2. **Setup:** `npm run bootstrap && npm run docker:up`
+3. **Documentation:** [docs/DOCKER_COMPOSE.md](./docs/DOCKER_COMPOSE.md)
 
-For detailed setup instructions, see [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md).
+**Native Development:**
+1. **Prerequisites:** Node.js 18+, npm 9+, PostgreSQL 15+, Redis 7+
+2. **Setup:** `npm run bootstrap && npm run verify && npm run dev`
+3. **Documentation:** [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md)

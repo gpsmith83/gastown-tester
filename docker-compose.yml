@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: gastown-postgres
+    environment:
+      POSTGRES_DB: gastown_tester
+      POSTGRES_USER: developer
+      POSTGRES_PASSWORD: devpass123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U developer -d gastown_tester"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for job queue
+  redis:
+    image: redis:7-alpine
+    container_name: gastown-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API service
+  api:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+    container_name: gastown-api
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgresql://developer:devpass123@postgres:5432/gastown_tester
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./packages/api/src:/app/packages/api/src
+      - ./packages/shared:/app/packages/shared
+      - ./node_modules:/app/node_modules
+    command: npm run dev:api
+
+  # Frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: packages/frontend/Dockerfile
+    container_name: gastown-frontend
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:3001
+      - VITE_APP_NAME=Gastown Tester
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    volumes:
+      - ./packages/frontend/src:/app/packages/frontend/src
+      - ./packages/shared:/app/packages/shared
+      - ./node_modules:/app/node_modules
+    command: npm run dev:frontend
+
+  # Worker service
+  worker:
+    build:
+      context: .
+      dockerfile: packages/worker/Dockerfile
+    container_name: gastown-worker
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://developer:devpass123@postgres:5432/gastown_tester
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/worker/src:/app/packages/worker/src
+      - ./packages/shared:/app/packages/shared
+      - ./node_modules:/app/node_modules
+    command: npm run dev:worker
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: gastown-network
