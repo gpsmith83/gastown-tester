@@ -577,6 +577,268 @@
   background: #c53030;
 }
 
+/* Requirements Section */
+.requirements-section {
+  margin-top: 2rem;
+}
+
+.requirements-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.requirements-header h2 {
+  color: #1a202c;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.create-requirement-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #48bb78;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-weight: 500;
+}
+
+.create-requirement-btn:hover {
+  background: #38a169;
+}
+
+/* Requirement Form */
+.requirement-form-container {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.requirement-form h3 {
+  color: #1a202c;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1.5rem 0;
+}
+
+.requirement-form .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.requirement-form .form-group:last-of-type {
+  margin-bottom: 2rem;
+}
+
+.requirement-form label {
+  display: block;
+  color: #2d3748;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.prompt-input, .context-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.prompt-input:focus, .context-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.char-count {
+  font-size: 0.875rem;
+  color: #718096;
+  text-align: right;
+  margin-top: 0.25rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.form-actions .cancel-btn {
+  background: #e2e8f0;
+  color: #4a5568;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.form-actions .cancel-btn:hover {
+  background: #cbd5e0;
+}
+
+.form-actions .create-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-weight: 500;
+}
+
+.form-actions .create-btn:hover:not(:disabled) {
+  background: #5a67d8;
+}
+
+.form-actions .create-btn:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+}
+
+.form-error {
+  color: #e53e3e;
+  font-size: 0.875rem;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fed7d7;
+  border: 1px solid #feb2b2;
+  border-radius: 6px;
+}
+
+/* Requirements List */
+.requirements-list {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.requirement-item {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background 0.2s;
+}
+
+.requirement-item:last-child {
+  border-bottom: none;
+}
+
+.requirement-item:hover {
+  background: #f7fafc;
+}
+
+.requirement-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.requirement-title {
+  color: #1a202c;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.requirement-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.requirement-status, .requirement-type, .requirement-priority {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.requirement-status.draft {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.requirement-status.active {
+  background: #d6f5d6;
+  color: #22543d;
+}
+
+.requirement-status.completed {
+  background: #bee3f8;
+  color: #2c5282;
+}
+
+.requirement-status.archived {
+  background: #fed7d7;
+  color: #742a2a;
+}
+
+.requirement-type.feature {
+  background: #e6fffa;
+  color: #234e52;
+}
+
+.requirement-type.bug {
+  background: #fed7d7;
+  color: #742a2a;
+}
+
+.requirement-type.enhancement {
+  background: #faf5ff;
+  color: #553c9a;
+}
+
+.requirement-type.epic {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.requirement-priority {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.requirement-author {
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+.requirement-description {
+  color: #4a5568;
+  line-height: 1.5;
+  margin-top: 0.5rem;
+}
+
+.empty-requirements {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 3rem;
+  text-align: center;
+}
+
+.empty-requirements p {
+  color: #718096;
+  font-size: 1rem;
+  margin: 0;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .header-content {

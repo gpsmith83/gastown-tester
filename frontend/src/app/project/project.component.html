@@ -211,6 +211,88 @@
       </div>
     </div>
 
+    <!-- Requirements Section -->
+    <div class="detail-section requirements-section">
+      <div class="requirements-header">
+        <h2>Requirements</h2>
+        <button class="create-requirement-btn" (click)="showRequirementForm = !showRequirementForm" *ngIf="!showRequirementForm">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+          Create Requirement
+        </button>
+      </div>
+
+      <!-- Requirement Creation Form -->
+      <div class="requirement-form-container" *ngIf="showRequirementForm">
+        <div class="requirement-form">
+          <h3>Create New Requirement</h3>
+          <div class="form-group">
+            <label for="requirement-prompt">Requirement Description *</label>
+            <textarea
+              id="requirement-prompt"
+              [(ngModel)]="requirementForm.prompt"
+              placeholder="Describe what you need in a short, clear prompt..."
+              rows="3"
+              required
+              maxlength="500"
+              class="prompt-input"
+            ></textarea>
+            <div class="char-count">{{requirementForm.prompt.length || 0}}/500</div>
+          </div>
+
+          <div class="form-group">
+            <label for="context-notes">Context Notes (Optional)</label>
+            <textarea
+              id="context-notes"
+              [(ngModel)]="requirementForm.contextNotes"
+              placeholder="Add any additional context, constraints, or notes..."
+              rows="2"
+              class="context-input"
+            ></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button class="cancel-btn" (click)="cancelRequirementForm()">Cancel</button>
+            <button
+              class="create-btn"
+              (click)="createRequirement()"
+              [disabled]="!requirementForm.prompt.trim() || isCreatingRequirement"
+            >
+              <span *ngIf="isCreatingRequirement">Creating...</span>
+              <span *ngIf="!isCreatingRequirement">Create Requirement</span>
+            </button>
+          </div>
+
+          <div class="form-error" *ngIf="requirementError">
+            {{requirementError}}
+          </div>
+        </div>
+      </div>
+
+      <!-- Requirements List -->
+      <div class="requirements-list" *ngIf="projectRequirements && projectRequirements.length > 0">
+        <div class="requirement-item" *ngFor="let requirement of projectRequirements">
+          <div class="requirement-content">
+            <div class="requirement-title">{{requirement.title}}</div>
+            <div class="requirement-meta">
+              <span class="requirement-status" [class]="requirement.status">{{requirement.status}}</span>
+              <span class="requirement-type" [class]="requirement.type">{{requirement.type}}</span>
+              <span class="requirement-priority">P{{requirement.priority}}</span>
+              <span class="requirement-author">by {{requirement.author?.name || requirement.author?.username}}</span>
+            </div>
+            <div class="requirement-description" *ngIf="requirement.description">
+              {{requirement.description}}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-requirements" *ngIf="!projectRequirements || projectRequirements.length === 0">
+        <p>No requirements created yet.</p>
+      </div>
+    </div>
+
     <!-- Project Actions -->
     <div class="project-actions" *ngIf="canEdit && !isEditing">
       <div class="actions-section">

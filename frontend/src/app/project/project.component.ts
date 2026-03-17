@@ -4,7 +4,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProjectService } from '../services/project.service';
 import { AuthService } from '../services/auth.service';
+import { RequirementService } from '../services/requirement.service';
 import { ProjectWithDetails, CreateProjectRequest } from '../models/workspace.model';
+import { RequirementWithDetails, RequirementFormData } from '../models/requirement.model';
 
 @Component({
   selector: 'app-project',
@@ -26,11 +28,22 @@ export class ProjectComponent implements OnInit {
   goalInput = '';
   labelInput = '';
 
+  // Requirement-related properties
+  projectRequirements: RequirementWithDetails[] = [];
+  showRequirementForm = false;
+  isCreatingRequirement = false;
+  requirementError: string | null = null;
+  requirementForm: RequirementFormData = {
+    prompt: '',
+    contextNotes: ''
+  };
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private projectService: ProjectService,
-    private authService: AuthService
+    private authService: AuthService,
+    private requirementService: RequirementService
   ) {}
 
   ngOnInit(): void {
@@ -63,6 +76,7 @@ export class ProjectComponent implements OnInit {
     this.projectService.getProject(this.projectId).subscribe({
       next: (project) => {
         this.project = project;
+        this.loadRequirements();
         this.isLoading = false;
       },
       error: (error) => {
@@ -177,6 +191,53 @@ export class ProjectComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/workspace']);
+  }
+
+  // Load requirements for the project
+  loadRequirements(): void {
+    if (!this.projectId) return;
+
+    this.requirementService.getProjectRequirements(this.projectId).subscribe({
+      next: (requirements) => {
+        this.projectRequirements = requirements;
+      },
+      error: (error) => {
+        console.error('Failed to load requirements:', error);
+        // Don't show error for requirements, just log it
+      }
+    });
+  }
+
+  // Create a new requirement
+  createRequirement(): void {
+    if (!this.requirementForm.prompt.trim() || !this.projectId) return;
+
+    this.isCreatingRequirement = true;
+    this.requirementError = null;
+
+    this.requirementService.createRequirementFromForm(this.projectId, this.requirementForm).subscribe({
+      next: (requirement) => {
+        // Add the new requirement to the list
+        this.projectRequirements = [requirement, ...this.projectRequirements];
+        this.cancelRequirementForm();
+        this.isCreatingRequirement = false;
+      },
+      error: (error) => {
+        console.error('Failed to create requirement:', error);
+        this.requirementError = 'Failed to create requirement. Please try again.';
+        this.isCreatingRequirement = false;
+      }
+    });
+  }
+
+  // Cancel requirement form
+  cancelRequirementForm(): void {
+    this.showRequirementForm = false;
+    this.requirementForm = {
+      prompt: '',
+      contextNotes: ''
+    };
+    this.requirementError = null;
   }
 
   get canEdit(): boolean {
