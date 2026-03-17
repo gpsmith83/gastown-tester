@@ -307,3 +307,101 @@ export interface UpdateContextSelectionRequest {
     is_selected: boolean;
   }[];
 }
+
+// Persona Orchestration types for default progression (B-302)
+export interface PersonaType {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  capabilities: string[];
+}
+
+export interface RequirementReadinessState {
+  requirement_id: string;
+  overall_readiness: 'not_started' | 'initial' | 'developing' | 'ready' | 'completed';
+  readiness_dimensions: ReadinessDimension[];
+  gaps_identified: ReadinessGap[];
+  last_assessed_at: Date;
+}
+
+export interface ReadinessDimension {
+  dimension_name: string;
+  dimension_category: 'scope' | 'acceptance_criteria' | 'technical_clarity' | 'dependencies' | 'user_impact';
+  current_state: 'missing' | 'draft' | 'partial' | 'complete';
+  confidence_score: number; // 0-100
+  last_contributed_by?: string; // persona that last contributed
+  contribution_timestamp?: Date;
+}
+
+export interface ReadinessGap {
+  gap_type: string;
+  gap_description: string;
+  suggested_persona_types: string[];
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  estimated_effort: 'small' | 'medium' | 'large';
+}
+
+export interface PersonaProgressionConfig {
+  id: string;
+  name: string;
+  description?: string;
+  is_default: boolean;
+  progression_rules: PersonaProgressionRule[];
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface PersonaProgressionRule {
+  rule_name: string;
+  condition: {
+    readiness_state?: string;
+    missing_dimensions?: string[];
+    gap_types?: string[];
+    priority_threshold?: string;
+  };
+  recommended_persona: {
+    persona_type: string;
+    persona_name?: string;
+    invocation_reason: string;
+    expected_contributions: string[];
+  };
+  priority: number; // 1=highest priority rule
+}
+
+export interface PersonaRecommendation {
+  requirement_id: string;
+  session_id?: string;
+  recommended_persona: {
+    persona_type: string;
+    persona_name: string;
+    invocation_reason: string;
+    expected_contributions: string[];
+    confidence_score: number; // 0-100
+  };
+  readiness_analysis: {
+    current_state: RequirementReadinessState;
+    primary_gaps: ReadinessGap[];
+    progression_rationale: string;
+  };
+  alternative_personas?: {
+    persona_type: string;
+    persona_name: string;
+    reason: string;
+    confidence_score: number;
+  }[];
+  generated_at: Date;
+}
+
+// Request/Response DTOs
+export interface GetPersonaRecommendationRequest {
+  requirement_id: string;
+  session_id?: string;
+  current_context?: any;
+}
+
+export interface PersonaRecommendationResponse {
+  recommendation: PersonaRecommendation | null;
+  fallback_reason?: string;
+  error?: string;
+}
