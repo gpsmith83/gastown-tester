@@ -235,8 +235,8 @@ router.put('/:id', async (req: Request, res: Response) => {
         }
       } else {
         // Clear both fields if URL is being removed
-        data.github_repo_url = null;
-        data.github_repo_id = null;
+        data.github_repo_url = undefined;
+        data.github_repo_id = undefined;
       }
     }
 
