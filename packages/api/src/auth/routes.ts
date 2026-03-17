@@ -26,7 +26,7 @@ router.get('/auth/github/callback', (req: Request, res: Response, next) => {
     return res.status(501).json(createErrorResponse('GitHub OAuth not configured'));
   }
 
-  passport.authenticate('github', { failureRedirect: '/auth/error' })(req, res, (err) => {
+  passport.authenticate('github', { failureRedirect: '/auth/error' })(req, res, (err: any) => {
     if (err) return next(err);
     // Successful authentication, redirect to frontend
     // In a real app, this might redirect to a frontend success page
