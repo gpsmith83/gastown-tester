@@ -15,7 +15,12 @@
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "test": "npm run test:backend && npm run test:frontend",
     "test:backend": "cd backend && npm test",
-    "test:frontend": "cd frontend && npm test"
+    "test:frontend": "cd frontend && npm test",
+    "db:generate": "cd backend && npm run db:generate",
+    "db:migrate": "cd backend && npm run db:migrate",
+    "db:migrate-apply": "cd backend && npm run db:migrate-apply",
+    "db:test": "cd backend && npm run db:test",
+    "db:studio": "cd backend && npm run db:studio"
   },
   "workspaces": [
     "backend",

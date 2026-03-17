@@ -1,1 +1,211 @@
-<p>requirement works!</p>
+<div class="requirement-detail-page">
+  <!-- Header Section -->
+  <header class="requirement-header">
+    <div class="header-content">
+      <div class="requirement-title-section">
+        <h1 class="requirement-title" *ngIf="state.requirement">{{ state.requirement.title }}</h1>
+        <h1 class="loading-title" *ngIf="state.loading">Loading requirement...</h1>
+        <h1 class="error-title" *ngIf="state.error">Error Loading Requirement</h1>
+
+        <div class="requirement-badges" *ngIf="state.requirement">
+          <span class="badge type-badge" [class]="typeBadgeClass">{{ state.requirement.type }}</span>
+          <span class="badge priority-badge">{{ priorityLabel }}</span>
+          <span class="badge status-badge" [class]="statusBadgeClass">{{ state.requirement.status }}</span>
+        </div>
+      </div>
+
+      <div class="requirement-actions" *ngIf="state.requirement && !state.loading">
+        <button class="btn btn-primary" (click)="startRefinement()">
+          Start Refinement
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="state.error && !state.loading">
+    <div class="error-message">
+      <p>{{ state.error }}</p>
+      <button class="btn btn-secondary" (click)="loadRequirement(state.requirement?.id || '')">
+        Retry
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="state.loading">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Loading requirement details...</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="requirement-content" *ngIf="state.requirement && !state.loading && !state.error">
+    <!-- Initial Prompt Section -->
+    <section class="initial-prompt-section">
+      <h2>Initial Prompt</h2>
+      <div class="prompt-content">
+        <p class="description" *ngIf="state.requirement.description">{{ state.requirement.description }}</p>
+        <p class="no-description" *ngIf="!state.requirement.description">No description provided.</p>
+
+        <div class="requirement-metadata">
+          <div class="metadata-item">
+            <label>Project:</label>
+            <span>{{ state.requirement.project?.name }}</span>
+          </div>
+          <div class="metadata-item">
+            <label>Author:</label>
+            <span>{{ state.requirement.author?.username }}</span>
+          </div>
+          <div class="metadata-item">
+            <label>Created:</label>
+            <span>{{ state.requirement.created_at | date:'medium' }}</span>
+          </div>
+          <div class="metadata-item" *ngIf="state.requirement.github_issue_url">
+            <label>GitHub Issue:</label>
+            <a [href]="state.requirement.github_issue_url" target="_blank" class="github-link">
+              #{{ state.requirement.github_issue_number || 'Unknown' }}
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Current Status Section -->
+    <section class="current-status-section">
+      <h2>Current Status</h2>
+      <div class="status-content">
+        <div class="status-indicator" [class]="statusBadgeClass">
+          <span class="status-text">{{ state.requirement.status | titlecase }}</span>
+        </div>
+        <div class="status-details">
+          <p *ngIf="state.requirement.status === 'draft'">
+            This requirement is in draft status. It hasn't been activated for refinement yet.
+          </p>
+          <p *ngIf="state.requirement.status === 'active'">
+            This requirement is active and ready for refinement work.
+          </p>
+          <p *ngIf="state.requirement.status === 'completed'">
+            This requirement has been completed and refined.
+          </p>
+          <p *ngIf="state.requirement.status === 'archived'">
+            This requirement has been archived.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Three Main Sections Grid -->
+    <div class="sections-grid">
+      <!-- Conversation History Section -->
+      <section class="conversation-section">
+        <h2>{{ conversationSection.title }}</h2>
+        <div class="section-content conversation-content">
+          <div class="placeholder-content" *ngIf="conversationSection.isEmpty">
+            <div class="placeholder-icon">💬</div>
+            <p>{{ conversationSection.placeholder }}</p>
+          </div>
+          <!-- Future: Actual conversation content will go here -->
+        </div>
+      </section>
+
+      <!-- Requirement Summary Section -->
+      <section class="summary-section">
+        <h2>{{ summarySection.title }}</h2>
+        <div class="section-content summary-content">
+          <div class="placeholder-content" *ngIf="summarySection.isEmpty">
+            <div class="placeholder-icon">📋</div>
+            <p>{{ summarySection.placeholder }}</p>
+          </div>
+          <!-- Future: Actual summary content will go here -->
+        </div>
+      </section>
+
+      <!-- Readiness Status Section -->
+      <section class="readiness-section">
+        <h2>{{ readinessSection.title }}</h2>
+        <div class="section-content readiness-content">
+
+          <!-- Overall Readiness Score -->
+          <div class="readiness-score-header">
+            <div class="score-display">
+              <h3>Overall Readiness</h3>
+              <div class="score-value" [class]="getScoreProgressClass()">
+                {{ readinessSection.totalScore }}%
+              </div>
+            </div>
+            <div class="score-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" [class]="getScoreProgressClass()" [style.width]="getScoreProgressWidth()"></div>
+              </div>
+              <div class="score-status">
+                <span class="status-icon" *ngIf="readinessSection.status === 'not_started'">⏳</span>
+                <span class="status-icon" *ngIf="readinessSection.status === 'in_progress'">🔄</span>
+                <span class="status-icon" *ngIf="readinessSection.status === 'ready'">✅</span>
+                <span class="status-icon" *ngIf="readinessSection.status === 'completed'">🎉</span>
+                <span class="status-text">{{ readinessStatusLabel | titlecase }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Readiness Dimensions -->
+          <div class="readiness-dimensions" *ngIf="readinessSection.dimensions.length > 0">
+            <h4>Readiness Dimensions</h4>
+            <div class="dimensions-grid">
+              <div
+                *ngFor="let dimension of readinessSection.dimensions"
+                class="dimension-item"
+                [class]="getDimensionStatusClass(dimension)"
+              >
+                <div class="dimension-header">
+                  <span class="dimension-icon">{{ getDimensionStatusIcon(dimension) }}</span>
+                  <span class="dimension-name">{{ dimension.name }}</span>
+                  <span class="dimension-score">{{ dimension.score }}%</span>
+                </div>
+                <p class="dimension-description">{{ dimension.description }}</p>
+
+                <!-- Missing Items for this dimension -->
+                <div class="missing-items" *ngIf="dimension.missingItems.length > 0">
+                  <ul class="missing-list">
+                    <li *ngFor="let item of dimension.missingItems" class="missing-item">
+                      {{ item }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Missing Information Summary -->
+          <div class="missing-information" *ngIf="hasMissingInformation">
+            <h4>⚠️ Missing Information</h4>
+            <p class="missing-intro">The following information is required before this requirement can generate a ticket:</p>
+            <ul class="missing-info-list">
+              <li *ngFor="let item of readinessSection.missingInformation" class="missing-info-item">
+                {{ item }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- Ticket Generation Status -->
+          <div class="ticket-generation-status">
+            <div class="generation-indicator" [class]="canGenerateTicket ? 'ready' : 'not-ready'">
+              <span class="indicator-icon" *ngIf="canGenerateTicket">✅</span>
+              <span class="indicator-icon" *ngIf="!canGenerateTicket">⛔</span>
+              <span class="indicator-text">
+                {{ canGenerateTicket ? 'Ready for Ticket Generation' : 'Not Ready for Ticket Generation' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Placeholder for empty state -->
+          <div class="placeholder-content" *ngIf="readinessSection.dimensions.length === 0">
+            <div class="placeholder-icon">📋</div>
+            <p>{{ readinessSection.placeholder }}</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
