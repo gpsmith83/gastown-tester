@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import { testConnection, closeConnection } from './database/connection';
 
 // Initialize Express app
 const app = express();
@@ -52,13 +53,47 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Routes
 
 // Health endpoint
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    version: process.env.npm_package_version || '1.0.0'
-  });
+app.get('/health', async (req: Request, res: Response) => {
+  try {
+    // Test database connection
+    const dbHealthy = await testConnection();
+
+    res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: process.env.npm_package_version || '1.0.0',
+      database: dbHealthy ? 'connected' : 'disconnected'
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: process.env.npm_package_version || '1.0.0',
+      database: 'error',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Database health check endpoint
+app.get('/health/db', async (req: Request, res: Response) => {
+  try {
+    const dbHealthy = await testConnection();
+    res.status(dbHealthy ? 200 : 503).json({
+      status: dbHealthy ? 'healthy' : 'unhealthy',
+      database: dbHealthy ? 'connected' : 'disconnected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'error',
+      database: 'error',
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 });
 
 // Root endpoint
@@ -101,26 +136,63 @@ app.use((error: ApiError, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-// Start server
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Gastown Tester API server running on port ${PORT}`);
-  console.log(`📱 Health check: http://localhost:${PORT}/health`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Initialize database and start server
+const startServer = async () => {
+  try {
+    // Test database connection on startup
+    console.log('🔗 Testing database connection...');
+    const dbHealthy = await testConnection();
+    if (!dbHealthy) {
+      console.warn('⚠️  Database connection test failed, but server will start anyway');
+    }
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('📴 SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('✅ Process terminated');
-  });
-});
+    // Start server
+    const server = app.listen(PORT, () => {
+      console.log(`🚀 Gastown Tester API server running on port ${PORT}`);
+      console.log(`📱 Health check: http://localhost:${PORT}/health`);
+      console.log(`🗄️  Database health: http://localhost:${PORT}/health/db`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
 
-process.on('SIGINT', () => {
-  console.log('📴 SIGINT received, shutting down gracefully');
-  server.close(() => {
-    console.log('✅ Process terminated');
-  });
+    return server;
+  } catch (error) {
+    console.error('💥 Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+// Start the server
+startServer().then((server) => {
+
+  // Graceful shutdown
+  const gracefulShutdown = async (signal: string) => {
+    console.log(`📴 ${signal} received, shutting down gracefully`);
+
+    try {
+      // Close HTTP server
+      await new Promise<void>((resolve) => {
+        server.close(() => {
+          console.log('🌐 HTTP server closed');
+          resolve();
+        });
+      });
+
+      // Close database connections
+      await closeConnection();
+
+      console.log('✅ Graceful shutdown completed');
+      process.exit(0);
+    } catch (error) {
+      console.error('❌ Error during shutdown:', error);
+      process.exit(1);
+    }
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+}).catch((error) => {
+  console.error('💥 Server startup failed:', error);
+  process.exit(1);
 });
 
 export default app;

@@ -12,7 +12,13 @@
     "build:frontend": "cd frontend && npm run build",
     "start": "npm run start:backend",
     "start:backend": "cd backend && npm start",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "test": "echo 'No tests yet' && exit 0",
+    "db:generate": "cd backend && npm run db:generate",
+    "db:migrate": "cd backend && npm run db:migrate",
+    "db:migrate-apply": "cd backend && npm run db:migrate-apply",
+    "db:test": "cd backend && npm run db:test",
+    "db:studio": "cd backend && npm run db:studio"
   },
   "workspaces": [
     "backend",
