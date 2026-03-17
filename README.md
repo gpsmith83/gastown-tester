@@ -1,108 +1,59 @@
-# Gastown Tester
+# GastownTesterFrontend
 
-Repository bootstrap and developer workflow foundation for a modern full-stack application.
+This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.22.
 
-## Quick Start
+## Development server
 
-```bash
-# Bootstrap the development environment
-npm run bootstrap
-
-# Verify setup
-npm run verify
-
-# Start all services
-npm run dev
-```
-
-**Access Points:**
-- Frontend: http://localhost:3000
-- API: http://localhost:3001
-- API Health: http://localhost:3001/health
-
-## Architecture
-
-**Monorepo Structure:**
-- `packages/shared` - Common types and utilities
-- `packages/api` - Express.js REST API server
-- `packages/frontend` - React frontend (Vite)
-- `packages/worker` - Background job processing
-
-**Technology Stack:**
-- **Language:** TypeScript
-- **Package Manager:** npm workspaces
-- **API Framework:** Express.js
-- **Frontend Framework:** React + Vite
-- **Testing:** Jest + Vitest
-- **Linting:** ESLint
-- **Build:** TypeScript compiler
-
-## Development
-
-See [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) for complete development guide.
-
-**Common Commands:**
-```bash
-npm run dev          # Start all services
-npm run build        # Build all packages
-npm run lint         # Lint all packages
-npm run test         # Run all tests
-npm run verify       # Full verification
-```
-
-## Project Status
-
-✅ **B-000: Repository bootstrap and developer workflow** (Complete)
-- Monorepo structure established
-- Standard scripts for development workflow
-- Bootstrap and verification procedures
-- Development documentation
-
-✅ **B-007: Local secrets and external access prerequisites** (Complete)
-- Comprehensive local development setup documentation
-- Environment template with all required secrets
-- Step-by-step credential provisioning guide
-- Security best practices for development vs production
-
-🔄 **Next Steps:**
-- B-006: Docker Compose local stack
-- B-008: Worker runtime and job execution skeleton
-
-## Getting Started
-
-1. **Prerequisites:** Node.js 18+, npm 9+
-2. **Bootstrap:** `npm run bootstrap`
-3. **Verify:** `npm run verify`
-4. **Develop:** `npm run dev`
-
-For detailed setup instructions, see [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md).
-
-## Local Secrets and External Access
-
-This project integrates with external services requiring authentication. For complete local development setup:
-
-- **Environment Setup**: See [LOCAL-DEVELOPMENT.md](./LOCAL-DEVELOPMENT.md) for step-by-step configuration
-- **Required Services**: GitHub OAuth, Linear API, AI providers, session security
-- **Environment Template**: Use `.env.example` as your starting point
-
-### Quick Setup
+To start a local development server, run:
 
 ```bash
-# Copy environment template
-cp .env.example .env.local
-
-# See LOCAL-DEVELOPMENT.md for complete setup instructions
+ng serve
 ```
 
-## Contributing
+Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
-1. Ensure your local environment is properly configured (see [LOCAL-DEVELOPMENT.md](./LOCAL-DEVELOPMENT.md))
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Follow TypeScript best practices and existing code style
-4. Add tests for new functionality
-5. Verify all integration tests pass
-6. Submit a pull request with clear description
+## Code scaffolding
 
-## License
+Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
 
-MIT License - see LICENSE file for details.
+```bash
+ng generate component component-name
+```
+
+For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+
+```bash
+ng generate --help
+```
+
+## Building
+
+To build the project run:
+
+```bash
+ng build
+```
+
+This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+
+## Running unit tests
+
+To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+
+```bash
+ng test
+```
+
+## Running end-to-end tests
+
+For end-to-end (e2e) testing, run:
+
+```bash
+ng e2e
+```
+
+Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+
+## Additional Resources
+
+For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
