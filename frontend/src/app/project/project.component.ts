@@ -6,7 +6,7 @@ import { ProjectService } from '../services/project.service';
 import { AuthService } from '../services/auth.service';
 import { RequirementService } from '../services/requirement.service';
 import { ProjectWithDetails, CreateProjectRequest } from '../models/workspace.model';
-import { RequirementWithDetails } from '../models/requirement.model';
+import { RequirementWithDetails, CreateRequirementRequest } from '../models/requirement.model';
 
 @Component({
   selector: 'app-project',
@@ -32,6 +32,18 @@ export class ProjectComponent implements OnInit {
   projectRequirements: RequirementWithDetails[] = [];
   loadingRequirements = false;
   requirementError: string | null = null;
+
+  // Requirement creation modal properties
+  showCreateRequirementModal = false;
+  createRequirementForm: CreateRequirementRequest = {
+    title: '',
+    description: '',
+    project_id: '',
+    priority: 3,
+    type: 'feature'
+  };
+  creatingRequirement = false;
+  createRequirementError: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -225,11 +237,69 @@ export class ProjectComponent implements OnInit {
     this.router.navigate(['/requirement'], { queryParams: { id: requirementId } });
   }
 
-  // Handle creating first requirement (placeholder for requirement creation)
+  // Handle creating first requirement
   createFirstRequirement(): void {
-    // This could open a modal or navigate to a creation page
-    // For now, we'll show an alert - this should be implemented based on B-102
-    alert('Requirement creation functionality to be implemented based on B-102');
+    this.openCreateRequirementModal();
+  }
+
+  // Open requirement creation modal
+  openCreateRequirementModal(): void {
+    if (!this.projectId) return;
+
+    // Reset form and error state
+    this.createRequirementForm = {
+      title: '',
+      description: '',
+      project_id: this.projectId,
+      priority: 3,
+      type: 'feature'
+    };
+    this.createRequirementError = null;
+    this.showCreateRequirementModal = true;
+  }
+
+  // Close requirement creation modal
+  closeCreateRequirementModal(): void {
+    this.showCreateRequirementModal = false;
+    this.createRequirementError = null;
+  }
+
+  // Submit requirement creation form
+  submitCreateRequirement(): void {
+    if (!this.createRequirementForm.title.trim()) {
+      this.createRequirementError = 'Title is required';
+      return;
+    }
+
+    this.creatingRequirement = true;
+    this.createRequirementError = null;
+
+    // Prepare the request data
+    const requestData: CreateRequirementRequest = {
+      ...this.createRequirementForm,
+      title: this.createRequirementForm.title.trim(),
+      description: this.createRequirementForm.description?.trim() || ''
+    };
+
+    this.requirementService.createRequirement(requestData).subscribe({
+      next: (newRequirement) => {
+        console.log('Requirement created successfully:', newRequirement);
+
+        // Close modal
+        this.closeCreateRequirementModal();
+
+        // Refresh requirements list
+        this.loadRequirements();
+
+        // Navigate to the new requirement detail page
+        this.router.navigate(['/requirement'], { queryParams: { id: newRequirement.id } });
+      },
+      error: (error) => {
+        console.error('Failed to create requirement:', error);
+        this.createRequirementError = 'Failed to create requirement. Please try again.';
+        this.creatingRequirement = false;
+      }
+    });
   }
 
   get canEdit(): boolean {
