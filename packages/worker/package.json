@@ -12,7 +12,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@gastown-tester/shared": "workspace:*",
+    "@gastown-tester/shared": "file:../shared",
     "dotenv": "^16.0.0"
   },
   "devDependencies": {

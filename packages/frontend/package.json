@@ -13,7 +13,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@gastown-tester/shared": "workspace:*",
+    "@gastown-tester/shared": "file:../shared",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
