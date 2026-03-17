@@ -27,7 +27,11 @@ echo "✅ npm version check passed: $(npm -v)"
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-npm ci
+if [ -f "package-lock.json" ]; then
+    npm ci
+else
+    npm install
+fi
 
 # Create environment files if they don't exist
 echo "🔧 Setting up environment files..."
