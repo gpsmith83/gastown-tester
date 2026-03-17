@@ -44,7 +44,7 @@ router.get('/projects/:projectId/connection', async (req: Request, res: Response
       connection: connectionData
     });
   } catch (error) {
-    console.error('Error fetching Linear connection:', error);
+    console.error('[LINEAR_ROUTES] Error fetching Linear connection:', error);
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch Linear connection'
@@ -76,6 +76,42 @@ router.post('/projects/:projectId/connection', async (req: Request, res: Respons
       });
     }
 
+    // Sanitize and validate input data
+    const sanitizedData: CreateLinearConnectionRequest = {
+      api_token: data.api_token.trim(),
+      workspace_id: data.workspace_id.trim(),
+      team_id: data.team_id.trim(),
+      board_id: data.board_id?.trim() || undefined,
+      project_id_linear: data.project_id_linear?.trim() || undefined
+    };
+
+    // Validate IDs format (Linear typically uses alphanumeric IDs)
+    const idRegex = /^[a-zA-Z0-9-_]+$/;
+    if (!idRegex.test(sanitizedData.workspace_id)) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid workspace ID format'
+      });
+    }
+    if (!idRegex.test(sanitizedData.team_id)) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid team ID format'
+      });
+    }
+    if (sanitizedData.board_id && !idRegex.test(sanitizedData.board_id)) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid board ID format'
+      });
+    }
+    if (sanitizedData.project_id_linear && !idRegex.test(sanitizedData.project_id_linear)) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid Linear project ID format'
+      });
+    }
+
     // Check if Linear connection already exists for this project
     const existingConnection = await LinearConnectionModel.findByProjectId(projectId);
     if (existingConnection) {
@@ -87,11 +123,11 @@ router.post('/projects/:projectId/connection', async (req: Request, res: Respons
 
     // Validate the Linear connection
     const validationResult = await LinearService.validateConnection(
-      data.api_token,
-      data.workspace_id,
-      data.team_id,
-      data.board_id,
-      data.project_id_linear
+      sanitizedData.api_token,
+      sanitizedData.workspace_id,
+      sanitizedData.team_id,
+      sanitizedData.board_id,
+      sanitizedData.project_id_linear
     );
 
     if (!validationResult.is_valid) {
@@ -101,8 +137,8 @@ router.post('/projects/:projectId/connection', async (req: Request, res: Respons
       });
     }
 
-    // Create the Linear connection
-    const connection = await LinearConnectionModel.create(projectId, data);
+    // Create the Linear connection with sanitized data
+    const connection = await LinearConnectionModel.create(projectId, sanitizedData);
 
     // Update validation status with the validation result
     await LinearConnectionModel.updateValidation(projectId, validationResult);
@@ -116,7 +152,12 @@ router.post('/projects/:projectId/connection', async (req: Request, res: Respons
       message: 'Linear connection created and validated successfully'
     });
   } catch (error) {
-    console.error('Error creating Linear connection:', error);
+    console.error('[LINEAR_ROUTES] Error creating Linear connection:', {
+      error: error instanceof Error ? error.message : error,
+      projectId: req.params.projectId,
+      // Don't log the request body as it contains the API token
+      hasRequestBody: !!req.body
+    });
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to create Linear connection'
@@ -157,6 +198,18 @@ router.put('/projects/:projectId/connection', async (req: Request, res: Response
       });
     }
 
+    // Re-validate the connection if key fields were updated
+    if (data.workspace_id || data.team_id || data.board_id || data.project_id_linear) {
+      // Mark as unvalidated since settings changed
+      await LinearConnectionModel.updateValidation(projectId, {
+        is_valid: false,
+        error: 'Connection settings updated - re-validation required'
+      });
+
+      // Note: We could optionally re-validate here, but it requires the API token
+      // which isn't provided in the update request for security reasons
+    }
+
     // Don't return sensitive token hash in response
     const { api_token_hash, ...connectionData } = updatedConnection;
 
@@ -165,7 +218,12 @@ router.put('/projects/:projectId/connection', async (req: Request, res: Response
       message: 'Linear connection updated successfully. Re-validation needed.'
     });
   } catch (error) {
-    console.error('Error updating Linear connection:', error);
+    console.error('[LINEAR_ROUTES] Error updating Linear connection:', {
+      error: error instanceof Error ? error.message : error,
+      projectId: req.params.projectId,
+      // Don't log sensitive update data
+      hasUpdateData: !!req.body
+    });
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to update Linear connection'
@@ -233,7 +291,12 @@ router.post('/projects/:projectId/connection/validate', async (req: Request, res
         : 'Linear connection validation failed'
     });
   } catch (error) {
-    console.error('Error validating Linear connection:', error);
+    console.error('[LINEAR_ROUTES] Error validating Linear connection:', {
+      error: error instanceof Error ? error.message : error,
+      projectId: req.params.projectId,
+      // Don't log the request body as it contains the API token
+      hasApiToken: !!req.body.api_token
+    });
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to validate Linear connection'
@@ -268,7 +331,10 @@ router.delete('/projects/:projectId/connection', async (req: Request, res: Respo
       message: 'Linear connection deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting Linear connection:', error);
+    console.error('[LINEAR_ROUTES] Error deleting Linear connection:', {
+      error: error instanceof Error ? error.message : error,
+      projectId: req.params.projectId
+    });
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to delete Linear connection'
