@@ -17,6 +17,8 @@ import workspaceRoutes from './routes/workspaces';
 import projectRoutes from './routes/projects';
 import aiRoutes from './routes/ai';
 import requirementRoutes from './routes/requirements';
+import refinementSessionRoutes from './routes/refinement-sessions';
+import requirementMessageRoutes from './routes/requirement-messages';
 import { globalAIService } from './services/ai-provider';
 
 // Initialize Express app
@@ -121,7 +123,9 @@ app.get('/', (req: Request, res: Response) => {
       workspaces: '/api/workspaces',
       projects: '/api/projects',
       ai: '/api/ai',
-      requirements: '/api/requirements'
+      requirements: '/api/requirements',
+      refinementSessions: '/api/refinement-sessions',
+      requirementMessages: '/api/requirement-messages'
     }
   });
 });
@@ -132,6 +136,8 @@ app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/requirements', requirementRoutes);
+app.use('/api/refinement-sessions', refinementSessionRoutes);
+app.use('/api/requirement-messages', requirementMessageRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

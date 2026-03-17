@@ -114,3 +114,83 @@ export interface RequirementWithDetails extends Requirement {
   project: Project;
   author: User;
 }
+
+// Refinement Session types
+export interface RefinementSession {
+  id: string;
+  requirement_id: string;
+  user_id: string;
+
+  // Session metadata
+  title?: string;
+  description?: string;
+  status: 'active' | 'completed' | 'paused' | 'cancelled';
+
+  // Session tracking
+  started_at: Date;
+  completed_at?: Date;
+
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CreateRefinementSessionRequest {
+  requirement_id: string;
+  title?: string;
+  description?: string;
+}
+
+export interface UpdateRefinementSessionRequest {
+  title?: string;
+  description?: string;
+  status?: 'active' | 'completed' | 'paused' | 'cancelled';
+}
+
+export interface RefinementSessionWithDetails extends RefinementSession {
+  requirement: RequirementWithDetails;
+  user: User;
+  message_count?: number;
+}
+
+// Requirement Message types
+export interface RequirementMessage {
+  id: string;
+  requirement_id: string;
+  session_id: string;
+  author_id?: string;
+
+  // Message content
+  message_type: 'user_message' | 'ai_response' | 'system_note' | 'clarification_request';
+  content: string;
+  role?: 'user' | 'assistant' | 'system';
+  metadata?: any;
+
+  // Ordering and threading
+  sequence_number: number;
+  parent_message_id?: string;
+
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CreateRequirementMessageRequest {
+  requirement_id: string;
+  session_id: string;
+  message_type?: 'user_message' | 'ai_response' | 'system_note' | 'clarification_request';
+  content: string;
+  role?: 'user' | 'assistant' | 'system';
+  metadata?: any;
+  parent_message_id?: string;
+}
+
+export interface UpdateRequirementMessageRequest {
+  content?: string;
+  metadata?: any;
+}
+
+export interface RequirementMessageWithDetails extends RequirementMessage {
+  author?: User;
+  requirement: Requirement;
+  session: RefinementSession;
+  replies?: RequirementMessage[];
+}
