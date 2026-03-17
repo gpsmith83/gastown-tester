@@ -6,4 +6,5 @@ export * from './usage-tracker';
 export * from './ai-service';
 
 // Export the global instances for convenience
-export { globalAIService, globalUsageTracker } from './ai-service';
+export { globalAIService } from './ai-service';
+export { globalUsageTracker } from './usage-tracker';
