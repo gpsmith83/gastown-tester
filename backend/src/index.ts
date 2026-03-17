@@ -19,7 +19,12 @@ import aiRoutes from './routes/ai';
 import requirementRoutes from './routes/requirements';
 import linearRoutes from './routes/linear';
 import githubRepositoryRoutes from './routes/github-repositories';
+import jobRoutes from './routes/jobs';
 import { globalAIService } from './services/ai-provider';
+
+// Import correlation middleware and structured logging
+import { correlationMiddleware } from './middleware/correlation';
+import { appLogger, apiLogger } from './utils/logger';
 
 // Initialize Express app
 const app = express();
@@ -86,14 +91,23 @@ app.use(morgan('combined', {
   }
 }));
 
+// Correlation ID middleware (must be before other logging middleware)
+app.use(correlationMiddleware);
+
 // JSON parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware for debugging
+// Enhanced request logging middleware with correlation tracking
 app.use((req: Request, res: Response, next: NextFunction) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${req.method} ${req.path}`);
+  const logger = apiLogger.withRequest(req);
+  logger.info(`${req.method} ${req.path}`, {
+    operation: 'request_received',
+    method: req.method,
+    path: req.path,
+    userAgent: req.headers['user-agent'],
+    ip: req.ip
+  });
   next();
 });
 
@@ -125,7 +139,8 @@ app.get('/', (req: Request, res: Response) => {
       ai: '/api/ai',
       requirements: '/api/requirements',
       linear: '/api/linear',
-      githubRepositories: '/api/github-repositories'
+      githubRepositories: '/api/github-repositories',
+      jobs: '/api/jobs'
     }
   });
 });
@@ -138,6 +153,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/requirements', requirementRoutes);
 app.use('/api/linear', linearRoutes);
 app.use('/api/github-repositories', githubRepositoryRoutes);
+app.use('/api/jobs', jobRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -148,16 +164,22 @@ app.use((req: Request, res: Response) => {
   });
 });
 
-// Error handling middleware
+// Error handling middleware with correlation tracking
 app.use((error: ApiError, req: Request, res: Response, next: NextFunction) => {
   const timestamp = new Date().toISOString();
   const status = error.status || 500;
   const message = error.message || 'Internal Server Error';
 
-  // Log error details
-  console.error(`[${timestamp}] ERROR ${status}: ${message}`);
-  console.error(`Request: ${req.method} ${req.path}`);
-  console.error(`Stack: ${error.stack}`);
+  // Log error with correlation context
+  const logger = apiLogger.withRequest(req);
+  logger.error(`Request failed: ${message}`, {
+    operation: 'request_error',
+    status,
+    method: req.method,
+    path: req.path,
+    stack: error.stack,
+    errorName: error.name
+  });
 
   // Send error response
   res.status(status).json({
@@ -170,52 +192,68 @@ app.use((error: ApiError, req: Request, res: Response, next: NextFunction) => {
 // Database initialization and server startup
 async function startServer() {
   try {
-    // Test database connection
-    console.log('🔧 Starting Gastown Tester API...');
+    appLogger.info('Starting Gastown Tester API...', { operation: 'server_startup' });
 
     const dbAvailable = await isDatabaseAvailable();
     if (dbAvailable) {
-      console.log('✅ Database connection established');
+      appLogger.info('Database connection established', { operation: 'database_connect' });
 
       // Initialize database schema
       try {
         await initializeDatabase();
-        console.log('✅ Database schema ready');
+        appLogger.info('Database schema ready', { operation: 'database_schema_init' });
       } catch (error) {
-        console.warn('⚠️ Database schema initialization failed (this is normal for existing databases):', error instanceof Error ? error.message : 'Unknown error');
+        appLogger.warn('Database schema initialization failed (normal for existing databases)', {
+          operation: 'database_schema_init',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
       }
     } else {
-      console.warn('⚠️ Database not available - API will start but database features will not work');
-      console.warn('⚠️ Make sure PostgreSQL is running and DATABASE_URL is configured');
+      appLogger.warn('Database not available - API will start but database features will not work', {
+        operation: 'database_connect'
+      });
+      appLogger.warn('Make sure PostgreSQL is running and DATABASE_URL is configured');
     }
 
     // Initialize AI service
     try {
       await globalAIService.initialize();
-      console.log('🤖 AI provider initialized successfully');
+      appLogger.info('AI provider initialized successfully', { operation: 'ai_provider_init' });
     } catch (error) {
-      console.warn('⚠️ AI provider initialization failed:', error instanceof Error ? error.message : 'Unknown error');
-      console.warn('⚠️ AI endpoints will not work properly. Check AI_PROVIDER_* environment variables.');
+      appLogger.warn('AI provider initialization failed', {
+        operation: 'ai_provider_init',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      appLogger.warn('AI endpoints will not work properly. Check AI_PROVIDER_* environment variables.');
     }
 
     // Start Express server
     const server = app.listen(PORT, () => {
-      console.log('🚀 Gastown Tester API server running on port', PORT);
-      console.log('📱 Health check:', `http://localhost:${PORT}/health`);
-      console.log('🔐 Auth endpoints:', `http://localhost:${PORT}/auth`);
-      console.log('🏢 Workspaces API:', `http://localhost:${PORT}/api/workspaces`);
-      console.log('📁 Projects API:', `http://localhost:${PORT}/api/projects`);
-      console.log('🤖 AI Provider API:', `http://localhost:${PORT}/api/ai`);
-      console.log('📋 Requirements API:', `http://localhost:${PORT}/api/requirements`);
-      console.log('🔗 Linear API:', `http://localhost:${PORT}/api/linear`);
-      console.log('🐙 GitHub Repositories API:', `http://localhost:${PORT}/api/github-repositories`);
-      console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
-      console.log('🎯 Frontend URL:', process.env.FRONTEND_URL || 'http://localhost:4200');
+      appLogger.info('Gastown Tester API server started', {
+        operation: 'server_start',
+        port: PORT,
+        environment: process.env.NODE_ENV || 'development',
+        frontendUrl: process.env.FRONTEND_URL || 'http://localhost:4200',
+        endpoints: {
+          health: `http://localhost:${PORT}/health`,
+          auth: `http://localhost:${PORT}/auth`,
+          workspaces: `http://localhost:${PORT}/api/workspaces`,
+          projects: `http://localhost:${PORT}/api/projects`,
+          ai: `http://localhost:${PORT}/api/ai`,
+          requirements: `http://localhost:${PORT}/api/requirements`,
+          linear: `http://localhost:${PORT}/api/linear`,
+          githubRepositories: `http://localhost:${PORT}/api/github-repositories`,
+          jobs: `http://localhost:${PORT}/api/jobs`
+        }
+      });
     });
 
     return server;
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    appLogger.error('Failed to start server', {
+      operation: 'server_startup',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     process.exit(1);
   }
 }
@@ -229,15 +267,18 @@ let serverInstance: any = null;
 server.then((srv) => {
   serverInstance = srv;
 }).catch((error) => {
-  console.error('Failed to start server:', error);
+  appLogger.error('Failed to start server', {
+    operation: 'server_startup',
+    error: error instanceof Error ? error.message : 'Unknown error'
+  });
   process.exit(1);
 });
 
 process.on('SIGTERM', () => {
-  console.log('📴 SIGTERM received, shutting down gracefully');
+  appLogger.info('SIGTERM received, shutting down gracefully', { operation: 'server_shutdown' });
   if (serverInstance) {
     serverInstance.close(() => {
-      console.log('✅ Process terminated');
+      appLogger.info('Process terminated', { operation: 'server_shutdown' });
       process.exit(0);
     });
   } else {
@@ -246,10 +287,10 @@ process.on('SIGTERM', () => {
 });
 
 process.on('SIGINT', () => {
-  console.log('📴 SIGINT received, shutting down gracefully');
+  appLogger.info('SIGINT received, shutting down gracefully', { operation: 'server_shutdown' });
   if (serverInstance) {
     serverInstance.close(() => {
-      console.log('✅ Process terminated');
+      appLogger.info('Process terminated', { operation: 'server_shutdown' });
       process.exit(0);
     });
   } else {
