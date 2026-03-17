@@ -1,6 +1,45 @@
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { db } from './database';
+
+// Run database migrations
+export async function runMigrations(): Promise<void> {
+  try {
+    console.log('📊 Running database migrations...');
+
+    const migrationsPath = join(__dirname, 'migrations');
+
+    // Check if migrations directory exists
+    try {
+      const migrationFiles = readdirSync(migrationsPath)
+        .filter(file => file.endsWith('.sql'))
+        .sort(); // Run migrations in order
+
+      for (const file of migrationFiles) {
+        console.log(`🔧 Running migration: ${file}`);
+        const migrationPath = join(migrationsPath, file);
+        const migrationSql = readFileSync(migrationPath, 'utf-8');
+        await db.query(migrationSql);
+        console.log(`✅ Migration ${file} completed`);
+      }
+
+      if (migrationFiles.length > 0) {
+        console.log('✅ All migrations completed successfully');
+      } else {
+        console.log('📊 No migrations found');
+      }
+    } catch (error) {
+      if ((error as any).code === 'ENOENT') {
+        console.log('📊 No migrations directory found, skipping migrations');
+      } else {
+        throw error;
+      }
+    }
+  } catch (error) {
+    console.error('❌ Failed to run migrations:', error);
+    throw error;
+  }
+}
 
 // Initialize database schema
 export async function initializeDatabase(): Promise<void> {
@@ -15,6 +54,10 @@ export async function initializeDatabase(): Promise<void> {
     await db.query(schemaSql);
 
     console.log('✅ Database schema initialized successfully');
+
+    // Run migrations
+    await runMigrations();
+
   } catch (error) {
     console.error('❌ Failed to initialize database schema:', error);
     throw error;

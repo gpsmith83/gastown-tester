@@ -1,5 +1,6 @@
 import { db } from '../config/database';
-import { Project, CreateProjectRequest, ProjectWithDetails, User, Workspace } from './types';
+import { Project, CreateProjectRequest, ProjectWithDetails, User, Workspace, ProjectWithLinearConnection } from './types';
+import { LinearConnectionModel } from './LinearConnection';
 
 export class ProjectModel {
   // Create a new project
@@ -242,5 +243,36 @@ export class ProjectModel {
     );
 
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Get project by ID with Linear connection details
+  static async findByIdWithLinearConnection(id: string): Promise<ProjectWithLinearConnection | null> {
+    const projectWithDetails = await this.findByIdWithDetails(id);
+    if (!projectWithDetails) return null;
+
+    const linearConnection = await LinearConnectionModel.findByProjectId(id);
+
+    return {
+      ...projectWithDetails,
+      linear_connection: linearConnection || undefined,
+    };
+  }
+
+  // Get projects a user has access to with Linear connection status
+  static async findByUserIdWithLinearConnection(user_id: string): Promise<ProjectWithLinearConnection[]> {
+    const projects = await this.findByUserId(user_id);
+
+    // Fetch Linear connections for all projects in parallel
+    const projectsWithLinear = await Promise.all(
+      projects.map(async (project) => {
+        const linearConnection = await LinearConnectionModel.findByProjectId(project.id);
+        return {
+          ...project,
+          linear_connection: linearConnection || undefined,
+        };
+      })
+    );
+
+    return projectsWithLinear;
   }
 }

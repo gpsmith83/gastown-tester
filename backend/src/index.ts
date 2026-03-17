@@ -17,6 +17,7 @@ import workspaceRoutes from './routes/workspaces';
 import projectRoutes from './routes/projects';
 import aiRoutes from './routes/ai';
 import requirementRoutes from './routes/requirements';
+import linearRoutes from './routes/linear';
 import { globalAIService } from './services/ai-provider';
 
 // Initialize Express app
@@ -121,7 +122,8 @@ app.get('/', (req: Request, res: Response) => {
       workspaces: '/api/workspaces',
       projects: '/api/projects',
       ai: '/api/ai',
-      requirements: '/api/requirements'
+      requirements: '/api/requirements',
+      linear: '/api/linear'
     }
   });
 });
@@ -132,6 +134,7 @@ app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/requirements', requirementRoutes);
+app.use('/api/linear', linearRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -201,6 +204,7 @@ async function startServer() {
       console.log('📁 Projects API:', `http://localhost:${PORT}/api/projects`);
       console.log('🤖 AI Provider API:', `http://localhost:${PORT}/api/ai`);
       console.log('📋 Requirements API:', `http://localhost:${PORT}/api/requirements`);
+      console.log('🔗 Linear API:', `http://localhost:${PORT}/api/linear`);
       console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
       console.log('🎯 Frontend URL:', process.env.FRONTEND_URL || 'http://localhost:4200');
     });

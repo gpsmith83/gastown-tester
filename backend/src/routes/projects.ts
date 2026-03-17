@@ -14,7 +14,7 @@ router.use(requireAuth);
 router.get('/', async (req: Request, res: Response) => {
   try {
     const user = req.user as User;
-    const projects = await ProjectModel.findByUserId(user.id);
+    const projects = await ProjectModel.findByUserIdWithLinearConnection(user.id);
 
     res.json({
       projects,
@@ -141,7 +141,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       });
     }
 
-    const project = await ProjectModel.findByIdWithDetails(id);
+    const project = await ProjectModel.findByIdWithLinearConnection(id);
     if (!project) {
       return res.status(404).json({
         error: 'Not Found',

@@ -99,6 +99,38 @@ export interface Requirement {
   updated_at: Date;
 }
 
+// Linear integration types (B-501)
+export interface LinearConnection {
+  id: string;
+  project_id: string;
+
+  // Linear API configuration
+  api_token_hash: string;
+  workspace_id: string;
+  workspace_name?: string;
+  team_id: string;
+  team_name?: string;
+
+  // Optional board/project mapping
+  board_id?: string;
+  board_name?: string;
+  project_id_linear?: string;
+  project_name_linear?: string;
+
+  // Validation and status
+  is_validated: boolean;
+  validation_error?: string;
+  last_validated_at?: Date;
+
+  // Connection metadata
+  linear_organization_id?: string;
+  linear_organization_name?: string;
+  permissions?: string[];
+
+  created_at: Date;
+  updated_at: Date;
+}
+
 // Request/Response DTOs for requirements
 export interface CreateRequirementRequest {
   title: string;
@@ -113,4 +145,49 @@ export interface CreateRequirementRequest {
 export interface RequirementWithDetails extends Requirement {
   project: Project;
   author: User;
+}
+
+export interface CreateLinearConnectionRequest {
+  api_token: string;
+  workspace_id: string;
+  team_id: string;
+  board_id?: string;
+  project_id_linear?: string;
+}
+
+export interface UpdateLinearConnectionRequest {
+  workspace_id?: string;
+  team_id?: string;
+  board_id?: string;
+  project_id_linear?: string;
+}
+
+export interface LinearConnectionValidationResult {
+  is_valid: boolean;
+  workspace?: {
+    id: string;
+    name: string;
+  };
+  team?: {
+    id: string;
+    name: string;
+  };
+  board?: {
+    id: string;
+    name: string;
+  };
+  project?: {
+    id: string;
+    name: string;
+  };
+  organization?: {
+    id: string;
+    name: string;
+  };
+  permissions?: string[];
+  error?: string;
+}
+
+export interface ProjectWithLinearConnection extends ProjectWithDetails {
+  linear_connection?: LinearConnection;
 }
