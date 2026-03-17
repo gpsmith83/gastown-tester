@@ -70,8 +70,24 @@ export interface SummarySection {
   isEmpty: boolean;
 }
 
+// Readiness dimension status
+export type ReadinessDimensionStatus = 'complete' | 'partial' | 'missing';
+
+// Individual readiness dimension
+export interface ReadinessDimension {
+  id: string;
+  name: string;
+  description: string;
+  status: ReadinessDimensionStatus;
+  score: number; // 0-100
+  missingItems: string[];
+}
+
 export interface ReadinessSection {
   title: string;
   placeholder: string;
   status: 'not_started' | 'in_progress' | 'ready' | 'completed';
+  dimensions: ReadinessDimension[];
+  totalScore: number;
+  missingInformation: string[];
 }

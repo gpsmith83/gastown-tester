@@ -126,17 +126,84 @@
       <section class="readiness-section">
         <h2>{{ readinessSection.title }}</h2>
         <div class="section-content readiness-content">
-          <div class="readiness-indicator" [class]="readinessStatusClass">
-            <div class="readiness-status">
-              <span class="status-icon" *ngIf="readinessSection.status === 'not_started'">⏳</span>
-              <span class="status-icon" *ngIf="readinessSection.status === 'in_progress'">🔄</span>
-              <span class="status-icon" *ngIf="readinessSection.status === 'ready'">✅</span>
-              <span class="status-icon" *ngIf="readinessSection.status === 'completed'">🎉</span>
-              <span class="status-text">{{ readinessStatusLabel | titlecase }}</span>
+
+          <!-- Overall Readiness Score -->
+          <div class="readiness-score-header">
+            <div class="score-display">
+              <h3>Overall Readiness</h3>
+              <div class="score-value" [class]="getScoreProgressClass()">
+                {{ readinessSection.totalScore }}%
+              </div>
             </div>
+            <div class="score-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" [class]="getScoreProgressClass()" [style.width]="getScoreProgressWidth()"></div>
+              </div>
+              <div class="score-status">
+                <span class="status-icon" *ngIf="readinessSection.status === 'not_started'">⏳</span>
+                <span class="status-icon" *ngIf="readinessSection.status === 'in_progress'">🔄</span>
+                <span class="status-icon" *ngIf="readinessSection.status === 'ready'">✅</span>
+                <span class="status-icon" *ngIf="readinessSection.status === 'completed'">🎉</span>
+                <span class="status-text">{{ readinessStatusLabel | titlecase }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Readiness Dimensions -->
+          <div class="readiness-dimensions" *ngIf="readinessSection.dimensions.length > 0">
+            <h4>Readiness Dimensions</h4>
+            <div class="dimensions-grid">
+              <div
+                *ngFor="let dimension of readinessSection.dimensions"
+                class="dimension-item"
+                [class]="getDimensionStatusClass(dimension)"
+              >
+                <div class="dimension-header">
+                  <span class="dimension-icon">{{ getDimensionStatusIcon(dimension) }}</span>
+                  <span class="dimension-name">{{ dimension.name }}</span>
+                  <span class="dimension-score">{{ dimension.score }}%</span>
+                </div>
+                <p class="dimension-description">{{ dimension.description }}</p>
+
+                <!-- Missing Items for this dimension -->
+                <div class="missing-items" *ngIf="dimension.missingItems.length > 0">
+                  <ul class="missing-list">
+                    <li *ngFor="let item of dimension.missingItems" class="missing-item">
+                      {{ item }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Missing Information Summary -->
+          <div class="missing-information" *ngIf="hasMissingInformation">
+            <h4>⚠️ Missing Information</h4>
+            <p class="missing-intro">The following information is required before this requirement can generate a ticket:</p>
+            <ul class="missing-info-list">
+              <li *ngFor="let item of readinessSection.missingInformation" class="missing-info-item">
+                {{ item }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- Ticket Generation Status -->
+          <div class="ticket-generation-status">
+            <div class="generation-indicator" [class]="canGenerateTicket ? 'ready' : 'not-ready'">
+              <span class="indicator-icon" *ngIf="canGenerateTicket">✅</span>
+              <span class="indicator-icon" *ngIf="!canGenerateTicket">⛔</span>
+              <span class="indicator-text">
+                {{ canGenerateTicket ? 'Ready for Ticket Generation' : 'Not Ready for Ticket Generation' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Placeholder for empty state -->
+          <div class="placeholder-content" *ngIf="readinessSection.dimensions.length === 0">
+            <div class="placeholder-icon">📋</div>
             <p>{{ readinessSection.placeholder }}</p>
           </div>
-          <!-- Future: Actual readiness content will go here -->
         </div>
       </section>
     </div>
