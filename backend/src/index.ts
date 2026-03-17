@@ -16,6 +16,7 @@ import authRoutes from './routes/auth';
 import workspaceRoutes from './routes/workspaces';
 import projectRoutes from './routes/projects';
 import aiRoutes from './routes/ai';
+import requirementRoutes from './routes/requirements';
 import { globalAIService } from './services/ai-provider';
 
 // Initialize Express app
@@ -119,7 +120,8 @@ app.get('/', (req: Request, res: Response) => {
       auth: '/auth',
       workspaces: '/api/workspaces',
       projects: '/api/projects',
-      ai: '/api/ai'
+      ai: '/api/ai',
+      requirements: '/api/requirements'
     }
   });
 });
@@ -129,6 +131,7 @@ app.use('/auth', authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/requirements', requirementRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -197,6 +200,7 @@ async function startServer() {
       console.log('🏢 Workspaces API:', `http://localhost:${PORT}/api/workspaces`);
       console.log('📁 Projects API:', `http://localhost:${PORT}/api/projects`);
       console.log('🤖 AI Provider API:', `http://localhost:${PORT}/api/ai`);
+      console.log('📋 Requirements API:', `http://localhost:${PORT}/api/requirements`);
       console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
       console.log('🎯 Frontend URL:', process.env.FRONTEND_URL || 'http://localhost:4200');
     });

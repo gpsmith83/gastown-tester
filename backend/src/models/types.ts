@@ -82,3 +82,35 @@ export interface ProjectWithDetails extends Project {
   workspace: Workspace;
   owner: User;
 }
+
+export interface Requirement {
+  id: string;
+  title: string;
+  description?: string;
+  project_id: string;
+  author_id: string;
+  priority: number; // 1=highest, 5=lowest
+  status: 'draft' | 'active' | 'completed' | 'archived';
+  type: 'feature' | 'bug' | 'enhancement' | 'epic';
+  github_issue_number?: number;
+  github_issue_url?: string;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Request/Response DTOs for requirements
+export interface CreateRequirementRequest {
+  title: string;
+  description?: string;
+  project_id: string;
+  priority?: number;
+  type?: 'feature' | 'bug' | 'enhancement' | 'epic';
+  github_issue_number?: number;
+  github_issue_url?: string;
+}
+
+export interface RequirementWithDetails extends Requirement {
+  project: Project;
+  author: User;
+}
