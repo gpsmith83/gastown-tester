@@ -8,7 +8,9 @@ import {
   RequirementWithDetails,
   ConversationSection,
   SummarySection,
-  ReadinessSection
+  ReadinessSection,
+  ReadinessDimension,
+  ReadinessDimensionStatus
 } from '../models/requirement.model';
 
 @Component({
@@ -42,7 +44,10 @@ export class RequirementComponent implements OnInit, OnDestroy {
   readinessSection: ReadinessSection = {
     title: 'Readiness Status',
     placeholder: 'Readiness assessment will be shown here once refinement begins.',
-    status: 'not_started'
+    status: 'not_started',
+    dimensions: [],
+    totalScore: 0,
+    missingInformation: []
   };
 
   constructor(
@@ -89,21 +94,195 @@ export class RequirementComponent implements OnInit, OnDestroy {
   private updateSectionStates(): void {
     // Update readiness status based on requirement status
     if (this.state.requirement) {
-      switch (this.state.requirement.status) {
-        case 'draft':
-          this.readinessSection.status = 'not_started';
-          break;
-        case 'active':
-          this.readinessSection.status = 'in_progress';
-          break;
-        case 'completed':
-          this.readinessSection.status = 'completed';
-          break;
-        case 'archived':
-          this.readinessSection.status = 'ready';
-          break;
-      }
+      this.updateReadinessStatus();
+      this.calculateReadinessDimensions();
+      this.calculateTotalScore();
     }
+  }
+
+  private updateReadinessStatus(): void {
+    if (!this.state.requirement) return;
+
+    switch (this.state.requirement.status) {
+      case 'draft':
+        this.readinessSection.status = 'not_started';
+        break;
+      case 'active':
+        this.readinessSection.status = 'in_progress';
+        break;
+      case 'completed':
+        this.readinessSection.status = 'completed';
+        break;
+      case 'archived':
+        this.readinessSection.status = 'ready';
+        break;
+    }
+  }
+
+  private calculateReadinessDimensions(): void {
+    if (!this.state.requirement) return;
+
+    const requirement = this.state.requirement;
+    const dimensions: ReadinessDimension[] = [
+      this.createTitleDimension(requirement),
+      this.createDescriptionDimension(requirement),
+      this.createProjectDimension(requirement),
+      this.createPriorityDimension(requirement),
+      this.createTypeDimension(requirement),
+      this.createGitHubDimension(requirement)
+    ];
+
+    this.readinessSection.dimensions = dimensions;
+  }
+
+  private createTitleDimension(requirement: RequirementWithDetails): ReadinessDimension {
+    const hasTitle = !!requirement.title && requirement.title.trim().length > 0;
+    const isClear = hasTitle && requirement.title.length >= 10; // At least 10 characters for clarity
+
+    let status: ReadinessDimensionStatus;
+    let score: number;
+    let missingItems: string[] = [];
+
+    if (!hasTitle) {
+      status = 'missing';
+      score = 0;
+      missingItems = ['Title is required'];
+    } else if (!isClear) {
+      status = 'partial';
+      score = 50;
+      missingItems = ['Title should be more descriptive (at least 10 characters)'];
+    } else {
+      status = 'complete';
+      score = 100;
+    }
+
+    return {
+      id: 'title',
+      name: 'Title',
+      description: 'Clear and descriptive requirement title',
+      status,
+      score,
+      missingItems
+    };
+  }
+
+  private createDescriptionDimension(requirement: RequirementWithDetails): ReadinessDimension {
+    const hasDescription = !!requirement.description && requirement.description.trim().length > 0;
+    const isDetailed = hasDescription && requirement.description!.length >= 50; // At least 50 characters for detail
+
+    let status: ReadinessDimensionStatus;
+    let score: number;
+    let missingItems: string[] = [];
+
+    if (!hasDescription) {
+      status = 'missing';
+      score = 0;
+      missingItems = ['Description is required'];
+    } else if (!isDetailed) {
+      status = 'partial';
+      score = 60;
+      missingItems = ['Description should include more detail (at least 50 characters)'];
+    } else {
+      status = 'complete';
+      score = 100;
+    }
+
+    return {
+      id: 'description',
+      name: 'Description',
+      description: 'Detailed requirement description',
+      status,
+      score,
+      missingItems
+    };
+  }
+
+  private createProjectDimension(requirement: RequirementWithDetails): ReadinessDimension {
+    const hasProject = !!requirement.project;
+
+    return {
+      id: 'project',
+      name: 'Project',
+      description: 'Associated project information',
+      status: hasProject ? 'complete' : 'missing',
+      score: hasProject ? 100 : 0,
+      missingItems: hasProject ? [] : ['Project association is required']
+    };
+  }
+
+  private createPriorityDimension(requirement: RequirementWithDetails): ReadinessDimension {
+    const hasPriority = requirement.priority && requirement.priority >= 1 && requirement.priority <= 5;
+
+    return {
+      id: 'priority',
+      name: 'Priority',
+      description: 'Valid priority level (1-5)',
+      status: hasPriority ? 'complete' : 'missing',
+      score: hasPriority ? 100 : 0,
+      missingItems: hasPriority ? [] : ['Valid priority (1-5) is required']
+    };
+  }
+
+  private createTypeDimension(requirement: RequirementWithDetails): ReadinessDimension {
+    const validTypes = ['feature', 'bug', 'enhancement', 'epic'];
+    const hasValidType = validTypes.includes(requirement.type);
+
+    return {
+      id: 'type',
+      name: 'Type',
+      description: 'Valid requirement type',
+      status: hasValidType ? 'complete' : 'missing',
+      score: hasValidType ? 100 : 0,
+      missingItems: hasValidType ? [] : ['Valid type (feature, bug, enhancement, epic) is required']
+    };
+  }
+
+  private createGitHubDimension(requirement: RequirementWithDetails): ReadinessDimension {
+    const hasGitHubIssue = !!requirement.github_issue_url;
+    const hasIssueNumber = !!requirement.github_issue_number;
+
+    let status: ReadinessDimensionStatus;
+    let score: number;
+    let missingItems: string[] = [];
+
+    if (hasGitHubIssue && hasIssueNumber) {
+      status = 'complete';
+      score = 100;
+    } else if (hasGitHubIssue || hasIssueNumber) {
+      status = 'partial';
+      score = 50;
+      if (!hasGitHubIssue) missingItems.push('GitHub issue URL');
+      if (!hasIssueNumber) missingItems.push('GitHub issue number');
+    } else {
+      status = 'missing';
+      score = 0;
+      missingItems = ['GitHub issue URL and number for tracking'];
+    }
+
+    return {
+      id: 'github',
+      name: 'GitHub Integration',
+      description: 'GitHub issue for tracking',
+      status,
+      score,
+      missingItems
+    };
+  }
+
+  private calculateTotalScore(): void {
+    if (this.readinessSection.dimensions.length === 0) {
+      this.readinessSection.totalScore = 0;
+      return;
+    }
+
+    const totalPossible = this.readinessSection.dimensions.length * 100;
+    const totalActual = this.readinessSection.dimensions.reduce((sum, dim) => sum + dim.score, 0);
+    this.readinessSection.totalScore = Math.round((totalActual / totalPossible) * 100);
+
+    // Collect all missing information
+    this.readinessSection.missingInformation = this.readinessSection.dimensions
+      .flatMap(dim => dim.missingItems)
+      .filter(item => item.length > 0);
   }
 
   get priorityLabel(): string {
@@ -129,6 +308,43 @@ export class RequirementComponent implements OnInit, OnDestroy {
 
   get readinessStatusLabel(): string {
     return this.readinessSection.status.replace('_', ' ');
+  }
+
+  getDimensionStatusClass(dimension: ReadinessDimension): string {
+    return `dimension-${dimension.status}`;
+  }
+
+  getDimensionStatusIcon(dimension: ReadinessDimension): string {
+    switch (dimension.status) {
+      case 'complete':
+        return '✅';
+      case 'partial':
+        return '⚠️';
+      case 'missing':
+        return '❌';
+      default:
+        return '❓';
+    }
+  }
+
+  getScoreProgressClass(): string {
+    const score = this.readinessSection.totalScore;
+    if (score >= 80) return 'score-excellent';
+    if (score >= 60) return 'score-good';
+    if (score >= 40) return 'score-fair';
+    return 'score-poor';
+  }
+
+  getScoreProgressWidth(): string {
+    return `${this.readinessSection.totalScore}%`;
+  }
+
+  get hasMissingInformation(): boolean {
+    return this.readinessSection.missingInformation.length > 0;
+  }
+
+  get canGenerateTicket(): boolean {
+    return this.readinessSection.totalScore >= 80 && !this.hasMissingInformation;
   }
 
   startRefinement(): void {
