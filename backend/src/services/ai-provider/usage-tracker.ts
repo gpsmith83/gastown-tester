@@ -4,7 +4,7 @@ import {
   AICompletionRequest,
   AICompletionResponse,
 } from './types';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 /**
  * Service for tracking AI provider usage and metadata
@@ -63,7 +63,7 @@ export class AIUsageTracker {
     endpoint: string = ''
   ): AIProviderUsageMetadata {
     return {
-      id: uuidv4(),
+      id: randomUUID(),
       provider,
       model,
       timestamp: new Date(),
