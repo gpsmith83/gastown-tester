@@ -307,7 +307,6 @@ export interface UpdateContextSelectionRequest {
     is_selected: boolean;
   }[];
 }
-
 // AI Provider Audit interfaces (B-706)
 export interface AIProviderAudit {
   id: string;
@@ -398,4 +397,193 @@ export interface AIProviderAuditQuery {
   limit?: number;
   offset?: number;
   include_payloads?: boolean; // For security - default false
+}
+
+// Persona and Refinement Session types (B-301)
+export interface RefinementSession {
+  id: string;
+  requirement_id: string;
+  user_id: string;
+  session_name?: string;
+  status: 'active' | 'completed' | 'archived';
+  session_metadata?: any;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CreateRefinementSessionRequest {
+  requirement_id: string;
+  session_name?: string;
+  status?: 'active' | 'completed' | 'archived';
+  session_metadata?: any;
+}
+
+export interface RefinementSessionWithDetails extends RefinementSession {
+  requirement: Requirement;
+  user: User;
+}
+
+export interface RefinementMessage {
+  id: string;
+  session_id: string;
+  user_id: string;
+  message_type: 'user_message' | 'ai_response' | 'system_message';
+  content: string;
+  message_metadata?: any;
+  created_at: Date;
+}
+
+export interface CreateRefinementMessageRequest {
+  session_id: string;
+  message_type: 'user_message' | 'ai_response' | 'system_message';
+  content: string;
+  message_metadata?: any;
+}
+
+export interface PersonaInvocation {
+  id: string;
+  requirement_id: string;
+  session_id: string;
+  user_id: string;
+  persona_name: string;
+  persona_type?: string;
+  persona_description?: string;
+  invocation_reason: string;
+  trigger_context?: any;
+  contributed_dimensions: any[];
+  dimension_summary?: string;
+  invocation_status: 'pending' | 'completed' | 'failed';
+  invocation_metadata?: any;
+  invoked_at: Date;
+  completed_at?: Date;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CreatePersonaInvocationRequest {
+  requirement_id: string;
+  session_id: string;
+  persona_name: string;
+  persona_type?: string;
+  persona_description?: string;
+  invocation_reason: string;
+  trigger_context?: any;
+  contributed_dimensions?: any[];
+  dimension_summary?: string;
+  invocation_metadata?: any;
+}
+
+export interface PersonaInvocationWithDetails extends PersonaInvocation {
+  requirement: Requirement;
+  session: RefinementSession;
+  user: User;
+}
+
+export interface PersonaDimensionContribution {
+  id: string;
+  invocation_id: string;
+  dimension_category: string;
+  dimension_name: string;
+  dimension_value?: string;
+  confidence_score?: number;
+  contribution_type?: 'addition' | 'modification' | 'validation' | 'concern';
+  impact_level?: 'low' | 'medium' | 'high' | 'critical';
+  rationale?: string;
+  created_at: Date;
+}
+
+// Persona Orchestration types (B-302)
+export interface PersonaOrchestrationRule {
+  id: string;
+  rule_name: string;
+  rule_type: 'progression' | 'trigger' | 'sequence' | 'conditional';
+  description?: string;
+  conditions: PersonaRuleCondition[];
+  actions: PersonaRuleAction[];
+  priority: number; // 1=highest, 5=lowest
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface PersonaRuleCondition {
+  condition_type: 'persona_invoked' | 'dimension_contributed' | 'session_status' | 'requirement_status' | 'user_action' | 'time_elapsed';
+  condition_data: any; // Flexible JSON for condition-specific data
+  operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains' | 'not_contains' | 'exists' | 'not_exists';
+  expected_value?: any;
+}
+
+export interface PersonaRuleAction {
+  action_type: 'invoke_persona' | 'update_session' | 'send_notification' | 'update_requirement' | 'create_task';
+  action_data: any; // Flexible JSON for action-specific data
+  delay_seconds?: number; // Optional delay before executing action
+}
+
+export interface PersonaProgressionConfig {
+  id: string;
+  progression_name: string;
+  description?: string;
+  default_sequence: string[]; // Array of persona types in order
+  rules: PersonaOrchestrationRule[];
+  is_default: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface PersonaOrchestrationExecution {
+  id: string;
+  rule_id: string;
+  requirement_id?: string;
+  session_id?: string;
+  user_id?: string;
+  trigger_event: string;
+  trigger_data?: any;
+  execution_status: 'pending' | 'executing' | 'completed' | 'failed';
+  actions_executed: PersonaExecutedAction[];
+  execution_metadata?: any;
+  started_at: Date;
+  completed_at?: Date;
+  error_message?: string;
+}
+
+export interface PersonaExecutedAction {
+  action_type: string;
+  action_data: any;
+  execution_status: 'pending' | 'completed' | 'failed';
+  executed_at?: Date;
+  error_message?: string;
+  result_data?: any;
+}
+
+// Request/Response DTOs for orchestration
+export interface CreateOrchestrationRuleRequest {
+  rule_name: string;
+  rule_type: 'progression' | 'trigger' | 'sequence' | 'conditional';
+  description?: string;
+  conditions: PersonaRuleCondition[];
+  actions: PersonaRuleAction[];
+  priority?: number;
+}
+
+export interface UpdateOrchestrationRuleRequest {
+  rule_name?: string;
+  description?: string;
+  conditions?: PersonaRuleCondition[];
+  actions?: PersonaRuleAction[];
+  priority?: number;
+  is_active?: boolean;
+}
+
+export interface CreateProgressionConfigRequest {
+  progression_name: string;
+  description?: string;
+  default_sequence: string[];
+  is_default?: boolean;
+}
+
+export interface TriggerOrchestrationRequest {
+  trigger_event: string;
+  trigger_data?: any;
+  requirement_id?: string;
+  session_id?: string;
 }

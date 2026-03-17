@@ -22,6 +22,7 @@ import linearRoutes from './routes/linear';
 import githubRepositoryRoutes from './routes/github-repositories';
 import jobRoutes from './routes/jobs';
 import contextSourceRoutes from './routes/context-sources';
+import personaOrchestrationRoutes from './routes/persona-orchestration';
 import { globalAIService } from './services/ai-provider';
 
 // Import correlation middleware and structured logging
@@ -144,7 +145,8 @@ app.get('/', (req: Request, res: Response) => {
       linear: '/api/linear',
       githubRepositories: '/api/github-repositories',
       jobs: '/api/jobs',
-      context_sources: '/api/context-sources'
+      context_sources: '/api/context-sources',
+      'persona-orchestration': '/api/persona-orchestration'
     }
   });
 });
@@ -160,6 +162,7 @@ app.use('/api/linear', linearRoutes);
 app.use('/api/github-repositories', githubRepositoryRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/context-sources', contextSourceRoutes);
+app.use('/api/persona-orchestration', personaOrchestrationRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -251,7 +254,8 @@ async function startServer() {
           linear: `http://localhost:${PORT}/api/linear`,
           githubRepositories: `http://localhost:${PORT}/api/github-repositories`,
           jobs: `http://localhost:${PORT}/api/jobs`,
-          contextSources: `http://localhost:${PORT}/api/context-sources`
+          contextSources: `http://localhost:${PORT}/api/context-sources`,
+          personaOrchestration: `http://localhost:${PORT}/api/persona-orchestration`
         }
       });
 
