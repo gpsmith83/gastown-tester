@@ -307,3 +307,101 @@ export interface UpdateContextSelectionRequest {
     is_selected: boolean;
   }[];
 }
+
+// Persona progression types (B-302)
+export interface PersonaProgressionHistory {
+  id: string;
+  project_id: string;
+  user_id: string;
+
+  // Progression session metadata
+  session_id: string;
+  session_type: 'refinement' | 'guidance' | 'validation' | 'selection' | 'custom';
+
+  // Specialist selection tracking
+  specialist_selected?: string;
+  specialist_reason?: string;
+  previous_specialists?: string[];
+
+  // Refinement outcome tracking
+  refinement_stage?: string;
+  refinement_outcome?: 'completed' | 'in_progress' | 'abandoned' | 'escalated';
+  outcome_data?: any;
+
+  // Progression context
+  current_persona_stack?: any;
+  progression_context?: any;
+
+  // Metrics and scoring
+  progression_score?: number;
+  time_spent_minutes?: number;
+  user_satisfaction?: number;
+
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CreatePersonaProgressionRequest {
+  project_id: string;
+  session_id: string;
+  session_type?: 'refinement' | 'guidance' | 'validation' | 'selection' | 'custom';
+  specialist_selected?: string;
+  specialist_reason?: string;
+  previous_specialists?: string[];
+  refinement_stage?: string;
+  refinement_outcome?: 'completed' | 'in_progress' | 'abandoned' | 'escalated';
+  outcome_data?: any;
+  current_persona_stack?: any;
+  progression_context?: any;
+  progression_score?: number;
+  time_spent_minutes?: number;
+  user_satisfaction?: number;
+}
+
+export interface UpdatePersonaProgressionRequest {
+  specialist_selected?: string;
+  specialist_reason?: string;
+  previous_specialists?: string[];
+  refinement_stage?: string;
+  refinement_outcome?: 'completed' | 'in_progress' | 'abandoned' | 'escalated';
+  outcome_data?: any;
+  current_persona_stack?: any;
+  progression_context?: any;
+  progression_score?: number;
+  time_spent_minutes?: number;
+  user_satisfaction?: number;
+}
+
+export interface PersonaProgressionSession {
+  session_id: string;
+  project_id: string;
+  user_id: string;
+  session_type: string;
+  history: PersonaProgressionHistory[];
+  current_specialist?: string;
+  progression_stats: {
+    total_steps: number;
+    completed_steps: number;
+    average_score?: number;
+    total_time_minutes: number;
+  };
+  started_at: Date;
+  last_activity: Date;
+}
+
+export interface PersonaProgressionAnalytics {
+  project_id: string;
+  total_sessions: number;
+  completion_rate: number;
+  average_session_duration: number;
+  most_used_specialists: Array<{
+    specialist: string;
+    usage_count: number;
+    success_rate: number;
+  }>;
+  progression_trends: Array<{
+    stage: string;
+    average_score: number;
+    completion_rate: number;
+  }>;
+}
