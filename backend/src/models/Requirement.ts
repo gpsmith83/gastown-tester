@@ -68,7 +68,7 @@ export class RequirementModel {
         data.type || 'feature',
         data.github_issue_number,
         data.github_issue_url,
-        data.assignee_id,
+        data.assignee_id || null,
         data.assignee_id ? author_id : null, // assigned_by is the creator if assignee is set
         priority_label,
         data.due_date ? new Date(data.due_date) : null,
@@ -102,7 +102,7 @@ export class RequirementModel {
       requirement.id,
       author_id,
       'created',
-      null,
+      undefined,
       'requirement created'
     );
 
@@ -296,17 +296,7 @@ export class RequirementModel {
     return result.rows[0] || null;
   }
 
-  // Update requirement status
-  static async updateStatus(id: string, status: 'draft' | 'active' | 'completed' | 'archived'): Promise<Requirement | null> {
-    const result = await db.query(
-      `UPDATE requirements SET status = $1, updated_at = NOW()
-       WHERE id = $2 AND is_active = true
-       RETURNING *`,
-      [status, id]
-    );
-
-    return result.rows[0] || null;
-  }
+  // (updateStatus method moved to advanced workflow section below)
 
   // Delete requirement (soft delete)
   static async delete(id: string): Promise<boolean> {
@@ -510,7 +500,7 @@ export class RequirementModel {
 
     // Build update query with conditional fields
     const updateFields = ['status = $1', 'updated_at = NOW()'];
-    const updateValues = [new_status];
+    const updateValues: any[] = [new_status];
     let paramIndex = 2;
 
     // Add resolution fields if status is being completed/cancelled
@@ -518,7 +508,7 @@ export class RequirementModel {
       updateFields.push(`resolution = $${paramIndex++}`);
       updateFields.push(`resolution_notes = $${paramIndex++}`);
       updateValues.push(data.resolution || 'done');
-      updateValues.push(data.resolution_notes);
+      updateValues.push(data.resolution_notes || null);
     }
 
     updateValues.push(requirement_id);
@@ -665,7 +655,7 @@ export class RequirementModel {
         requirement_id,
         updated_by,
         'lifecycle_update',
-        null,
+        undefined,
         'Updated lifecycle fields (estimates, story points, labels, metadata)'
       );
     }

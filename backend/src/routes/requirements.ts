@@ -304,7 +304,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
     // For now, allow all project members to change status
     // In the future, you might want to restrict to authors/admins
 
-    const requirement = await RequirementModel.updateStatus(id, status);
+    const requirement = await RequirementModel.updateStatus(id, { status }, user.id);
     if (!requirement) {
       return res.status(404).json({
         error: 'Not Found',

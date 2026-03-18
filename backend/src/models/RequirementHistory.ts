@@ -167,8 +167,8 @@ export class RequirementHistoryModel {
       requirement_id,
       changed_by,
       'assignee_id',
-      old_assignee || null,
-      new_assignee || null,
+      old_assignee || undefined,
+      new_assignee || undefined,
       change_reason
     );
   }
