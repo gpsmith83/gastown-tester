@@ -307,3 +307,119 @@ export interface UpdateContextSelectionRequest {
     is_selected: boolean;
   }[];
 }
+
+// Export batch types (B-503)
+export interface ExportBatch {
+  id: string;
+  project_id: string;
+  name: string;
+  description?: string;
+
+  // Export target configuration
+  target_type: 'linear';
+  target_config: any; // JSON configuration for the target (Linear workspace, team, etc.)
+
+  // Batch status and progress
+  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'partially_completed';
+  total_items: number;
+  processed_items: number;
+  failed_items: number;
+
+  // Metadata
+  created_by: string; // user_id
+  started_at?: Date;
+  completed_at?: Date;
+  error_message?: string;
+
+  // Settings
+  retry_failed: boolean;
+  max_retries: number;
+
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ExportBatchItem {
+  id: string;
+  batch_id: string;
+  requirement_id: string;
+
+  // Item status and result
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  external_id?: string; // ID in the target system (e.g., Linear issue ID)
+  external_url?: string; // URL in the target system (e.g., Linear issue URL)
+
+  // Error handling
+  error_message?: string;
+  retry_count: number;
+  last_attempted_at?: Date;
+  completed_at?: Date;
+
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Linear issue creation types (B-504)
+export interface LinearIssueCreateRequest {
+  title: string;
+  description?: string;
+  teamId: string;
+  projectId?: string;
+  priority?: number;
+  labels?: string[];
+  assigneeId?: string;
+  stateId?: string;
+}
+
+export interface LinearIssueCreateResponse {
+  success: boolean;
+  issue?: {
+    id: string;
+    identifier: string; // e.g., "TEAM-123"
+    title: string;
+    url: string;
+  };
+  error?: string;
+}
+
+export interface LinearExportResult {
+  success: boolean;
+  issue_id?: string;
+  issue_identifier?: string;
+  issue_url?: string;
+  error?: string;
+  retry_recommended?: boolean;
+}
+
+// Request/Response DTOs for export batches
+export interface CreateExportBatchRequest {
+  name: string;
+  description?: string;
+  requirement_ids: string[];
+  target_type: 'linear';
+  target_config: {
+    workspace_id?: string;
+    team_id: string;
+    project_id_linear?: string;
+    default_priority?: number;
+    default_labels?: string[];
+  };
+  retry_failed?: boolean;
+  max_retries?: number;
+}
+
+export interface ExportBatchWithItems extends ExportBatch {
+  items: ExportBatchItem[];
+}
+
+export interface ExportBatchSummary {
+  id: string;
+  name: string;
+  status: string;
+  total_items: number;
+  processed_items: number;
+  failed_items: number;
+  created_at: Date;
+  started_at?: Date;
+  completed_at?: Date;
+}

@@ -330,4 +330,193 @@ export class LinearService {
 
     return result;
   }
+
+  // Create Linear issue (B-504)
+  static async createIssue(
+    apiToken: string,
+    data: {
+      title: string;
+      description?: string;
+      teamId: string;
+      projectId?: string;
+      priority?: number;
+      labelIds?: string[];
+      assigneeId?: string;
+      stateId?: string;
+    }
+  ): Promise<{
+    success: boolean;
+    issue?: {
+      id: string;
+      identifier: string;
+      title: string;
+      url: string;
+    };
+    error?: string;
+  }> {
+    const mutation = `
+      mutation CreateIssue($input: IssueCreateInput!) {
+        issueCreate(input: $input) {
+          success
+          issue {
+            id
+            identifier
+            title
+            url
+          }
+        }
+      }
+    `;
+
+    const input: any = {
+      title: data.title,
+      teamId: data.teamId,
+    };
+
+    if (data.description) {
+      input.description = data.description;
+    }
+
+    if (data.projectId) {
+      input.projectId = data.projectId;
+    }
+
+    if (data.priority) {
+      input.priority = data.priority;
+    }
+
+    if (data.labelIds && data.labelIds.length > 0) {
+      input.labelIds = data.labelIds;
+    }
+
+    if (data.assigneeId) {
+      input.assigneeId = data.assigneeId;
+    }
+
+    if (data.stateId) {
+      input.stateId = data.stateId;
+    }
+
+    const response = await this.makeRequest<{
+      issueCreate: {
+        success: boolean;
+        issue?: {
+          id: string;
+          identifier: string;
+          title: string;
+          url: string;
+        };
+      };
+    }>(mutation, { input }, apiToken);
+
+    if (response.errors?.length) {
+      return {
+        success: false,
+        error: response.errors[0].message,
+      };
+    }
+
+    if (!response.data?.issueCreate) {
+      return {
+        success: false,
+        error: 'No response from Linear API',
+      };
+    }
+
+    const { success, issue } = response.data.issueCreate;
+
+    return {
+      success,
+      issue,
+      error: success ? undefined : 'Issue creation failed',
+    };
+  }
+
+  // Get team states for issue creation
+  static async getTeamStates(
+    teamId: string,
+    apiToken: string
+  ): Promise<{ states?: Array<{ id: string; name: string; type: string }>; error?: string }> {
+    const query = `
+      query GetTeamStates($teamId: String!) {
+        team(id: $teamId) {
+          states {
+            nodes {
+              id
+              name
+              type
+            }
+          }
+        }
+      }
+    `;
+
+    const response = await this.makeRequest<{
+      team: {
+        states: {
+          nodes: Array<{ id: string; name: string; type: string }>;
+        };
+      };
+    }>(query, { teamId }, apiToken);
+
+    if (response.errors?.length) {
+      return {
+        error: response.errors[0].message,
+      };
+    }
+
+    if (!response.data?.team) {
+      return {
+        error: 'Team not found',
+      };
+    }
+
+    return {
+      states: response.data.team.states.nodes,
+    };
+  }
+
+  // Get team labels for issue creation
+  static async getTeamLabels(
+    teamId: string,
+    apiToken: string
+  ): Promise<{ labels?: Array<{ id: string; name: string; color: string }>; error?: string }> {
+    const query = `
+      query GetTeamLabels($teamId: String!) {
+        team(id: $teamId) {
+          labels {
+            nodes {
+              id
+              name
+              color
+            }
+          }
+        }
+      }
+    `;
+
+    const response = await this.makeRequest<{
+      team: {
+        labels: {
+          nodes: Array<{ id: string; name: string; color: string }>;
+        };
+      };
+    }>(query, { teamId }, apiToken);
+
+    if (response.errors?.length) {
+      return {
+        error: response.errors[0].message,
+      };
+    }
+
+    if (!response.data?.team) {
+      return {
+        error: 'Team not found',
+      };
+    }
+
+    return {
+      labels: response.data.team.labels.nodes,
+    };
+  }
 }
