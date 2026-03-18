@@ -161,12 +161,46 @@
                 <div class="dimension-header">
                   <span class="dimension-icon">{{ getDimensionStatusIcon(dimension) }}</span>
                   <span class="dimension-name">{{ dimension.name }}</span>
-                  <span class="dimension-score">{{ dimension.score }}%</span>
+                  <span class="dimension-score">
+                    <span *ngIf="!hasOverride(dimension.id)">{{ dimension.score }}%</span>
+                    <span *ngIf="hasOverride(dimension.id)" class="overridden-score">
+                      <span class="original-score">{{ dimension.score }}%</span>
+                      →
+                      <span class="override-score">{{ getEffectiveScore(dimension) }}%</span>
+                      <span class="override-badge">OVERRIDE</span>
+                    </span>
+                  </span>
+
+                  <!-- B-307: Override Controls -->
+                  <div class="dimension-actions">
+                    <button *ngIf="!hasOverride(dimension.id)"
+                            class="override-btn"
+                            (click)="openOverrideModal(dimension)"
+                            title="Override this dimension">
+                      🔓 Override
+                    </button>
+                    <button *ngIf="hasOverride(dimension.id)"
+                            class="remove-override-btn"
+                            (click)="removeOverride(getOverride(dimension.id)!)"
+                            title="Remove override">
+                      ❌ Remove Override
+                    </button>
+                  </div>
                 </div>
                 <p class="dimension-description">{{ dimension.description }}</p>
 
-                <!-- Missing Items for this dimension -->
-                <div class="missing-items" *ngIf="dimension.missingItems.length > 0">
+                <!-- Override Information -->
+                <div class="override-info" *ngIf="hasOverride(dimension.id)">
+                  <div class="override-details">
+                    <strong>Override Active:</strong> {{ getOverride(dimension.id)?.override_reason }}
+                    <br>
+                    <small>By {{ getOverride(dimension.id)?.user?.name || getOverride(dimension.id)?.user?.username }}
+                           on {{ getOverride(dimension.id)?.created_at | date:'short' }}</small>
+                  </div>
+                </div>
+
+                <!-- Missing Items for this dimension (only show if no override) -->
+                <div class="missing-items" *ngIf="dimension.missingItems.length > 0 && !hasOverride(dimension.id)">
                   <ul class="missing-list">
                     <li *ngFor="let item of dimension.missingItems" class="missing-item">
                       {{ item }}
@@ -208,4 +242,60 @@
       </section>
     </div>
   </main>
+</div>
+
+<!-- B-307: Readiness Gate Override Modal -->
+<div class="modal-overlay" *ngIf="showOverrideModal" (click)="closeOverrideModal()">
+  <div class="override-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Override Readiness Gate</h3>
+      <button class="close-btn" (click)="closeOverrideModal()">×</button>
+    </div>
+
+    <div class="modal-body" *ngIf="currentDimensionForOverride">
+      <div class="dimension-info">
+        <h4>{{ currentDimensionForOverride.name }}</h4>
+        <p>Current Score: <strong>{{ currentDimensionForOverride.score }}%</strong></p>
+        <p>{{ currentDimensionForOverride.description }}</p>
+      </div>
+
+      <div class="override-form">
+        <div class="form-group">
+          <label for="override-score">Override Score:</label>
+          <input
+            id="override-score"
+            type="number"
+            min="0"
+            max="100"
+            [(ngModel)]="overrideScore"
+            class="score-input"
+          />
+          <span>%</span>
+        </div>
+
+        <div class="form-group">
+          <label for="override-reason">Reason for Override:</label>
+          <textarea
+            id="override-reason"
+            [(ngModel)]="overrideReason"
+            placeholder="Please explain why this dimension should be overridden..."
+            class="reason-textarea"
+            rows="4"
+            required
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="cancel-btn" (click)="closeOverrideModal()">Cancel</button>
+      <button
+        class="create-btn"
+        [disabled]="!overrideReason.trim() || isCreatingOverride"
+        (click)="createOverride()"
+      >
+        {{ isCreatingOverride ? 'Creating...' : 'Create Override' }}
+      </button>
+    </div>
+  </div>
 </div>

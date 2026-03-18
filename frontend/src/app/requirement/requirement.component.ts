@@ -1,8 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { Subject, takeUntil } from 'rxjs';
+import { FormsModule } from '@angular/forms';
+import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { RequirementService } from '../services/requirement.service';
+import { PersonaProgressionService } from '../services/persona-progression.service';
 import {
   RequirementDetailState,
   RequirementWithDetails,
@@ -10,12 +12,14 @@ import {
   SummarySection,
   ReadinessSection,
   ReadinessDimension,
-  ReadinessDimensionStatus
+  ReadinessDimensionStatus,
+  ReadinessGateOverride,
+  CreateReadinessGateOverrideRequest
 } from '../models/requirement.model';
 
 @Component({
   selector: 'app-requirement',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './requirement.component.html',
   styleUrl: './requirement.component.css'
 })
@@ -50,9 +54,17 @@ export class RequirementComponent implements OnInit, OnDestroy {
     missingInformation: []
   };
 
+  // B-307: Override UI state
+  showOverrideModal = false;
+  currentDimensionForOverride: ReadinessDimension | null = null;
+  overrideReason = '';
+  overrideScore = 100;
+  isCreatingOverride = false;
+
   constructor(
     private route: ActivatedRoute,
-    private requirementService: RequirementService
+    private requirementService: RequirementService,
+    private personaProgressionService: PersonaProgressionService
   ) {}
 
   ngOnInit(): void {
@@ -75,11 +87,16 @@ export class RequirementComponent implements OnInit, OnDestroy {
     this.state.loading = true;
     this.state.error = null;
 
-    this.requirementService.getRequirement(id)
+    // Load requirement and readiness overrides in parallel
+    forkJoin({
+      requirement: this.requirementService.getRequirement(id),
+      overrides: this.personaProgressionService.getReadinessOverrides(id)
+    })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (requirement: RequirementWithDetails) => {
+        next: ({ requirement, overrides }) => {
           this.state.requirement = requirement;
+          this.readinessSection.overrides = overrides.overrides;
           this.state.loading = false;
           this.updateSectionStates();
         },
@@ -276,11 +293,13 @@ export class RequirementComponent implements OnInit, OnDestroy {
     }
 
     const totalPossible = this.readinessSection.dimensions.length * 100;
-    const totalActual = this.readinessSection.dimensions.reduce((sum, dim) => sum + dim.score, 0);
+    // Use effective scores (including overrides)
+    const totalActual = this.readinessSection.dimensions.reduce((sum, dim) => sum + this.getEffectiveScore(dim), 0);
     this.readinessSection.totalScore = Math.round((totalActual / totalPossible) * 100);
 
-    // Collect all missing information
+    // Collect missing information, but exclude dimensions that have active overrides
     this.readinessSection.missingInformation = this.readinessSection.dimensions
+      .filter(dim => !this.hasOverride(dim.id)) // Don't include missing info for overridden dimensions
       .flatMap(dim => dim.missingItems)
       .filter(item => item.length > 0);
   }
@@ -350,5 +369,104 @@ export class RequirementComponent implements OnInit, OnDestroy {
   startRefinement(): void {
     // TODO: Implement refinement session start logic
     console.log('Starting refinement for requirement:', this.state.requirement?.id);
+  }
+
+  // B-307: Readiness Gate Override Methods
+
+  openOverrideModal(dimension: ReadinessDimension): void {
+    this.currentDimensionForOverride = dimension;
+    this.overrideReason = '';
+    this.overrideScore = 100;
+    this.showOverrideModal = true;
+  }
+
+  closeOverrideModal(): void {
+    this.showOverrideModal = false;
+    this.currentDimensionForOverride = null;
+    this.overrideReason = '';
+    this.overrideScore = 100;
+    this.isCreatingOverride = false;
+  }
+
+  createOverride(): void {
+    if (!this.currentDimensionForOverride || !this.state.requirement || !this.overrideReason.trim()) {
+      return;
+    }
+
+    this.isCreatingOverride = true;
+
+    const request: CreateReadinessGateOverrideRequest = {
+      requirement_id: this.state.requirement.id,
+      dimension_id: this.currentDimensionForOverride.id,
+      dimension_name: this.currentDimensionForOverride.name,
+      override_reason: this.overrideReason.trim(),
+      original_score: this.currentDimensionForOverride.score,
+      override_score: this.overrideScore,
+      override_type: 'manual'
+    };
+
+    this.personaProgressionService.createReadinessOverride(request)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          console.log('Override created successfully:', response);
+
+          // Add the new override to the readiness section
+          if (!this.readinessSection.overrides) {
+            this.readinessSection.overrides = [];
+          }
+          this.readinessSection.overrides.push(response.override);
+
+          // Recalculate total score with overrides
+          this.calculateTotalScore();
+
+          this.closeOverrideModal();
+        },
+        error: (error) => {
+          console.error('Failed to create override:', error);
+          this.isCreatingOverride = false;
+          // TODO: Show error message to user
+        }
+      });
+  }
+
+  removeOverride(override: ReadinessGateOverride): void {
+    if (!confirm('Are you sure you want to remove this override?')) {
+      return;
+    }
+
+    this.personaProgressionService.deleteReadinessOverride(override.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          console.log('Override removed successfully');
+
+          // Remove override from the list
+          if (this.readinessSection.overrides) {
+            this.readinessSection.overrides = this.readinessSection.overrides.filter(o => o.id !== override.id);
+          }
+
+          // Recalculate total score
+          this.calculateTotalScore();
+        },
+        error: (error) => {
+          console.error('Failed to remove override:', error);
+          // TODO: Show error message to user
+        }
+      });
+  }
+
+  hasOverride(dimensionId: string): boolean {
+    return this.getOverride(dimensionId) !== null;
+  }
+
+  getOverride(dimensionId: string): ReadinessGateOverride | null {
+    if (!this.readinessSection.overrides) return null;
+    return this.readinessSection.overrides.find(o => o.dimension_id === dimensionId && o.is_active) || null;
+  }
+
+  getEffectiveScore(dimension: ReadinessDimension): number {
+    const override = this.getOverride(dimension.id);
+    return override ? override.override_score : dimension.score;
   }
 }

@@ -90,4 +90,40 @@ export interface ReadinessSection {
   dimensions: ReadinessDimension[];
   totalScore: number;
   missingInformation: string[];
+  overrides?: ReadinessGateOverride[];
+}
+
+// B-306 & B-307: Readiness Gate Override Types
+export interface ReadinessGateOverride {
+  id: string;
+  requirement_id: string;
+  user_id: string;
+  dimension_id: string;
+  dimension_name: string;
+  override_reason: string;
+  original_score: number;
+  override_score: number;
+  override_type: 'manual' | 'automatic' | 'persona_rule';
+  expires_at?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: string;
+    username: string;
+    email: string;
+    name?: string;
+    avatar_url?: string;
+  };
+}
+
+export interface CreateReadinessGateOverrideRequest {
+  requirement_id: string;
+  dimension_id: string;
+  dimension_name: string;
+  override_reason: string;
+  original_score?: number;
+  override_score?: number;
+  override_type?: 'manual' | 'automatic' | 'persona_rule';
+  expires_at?: string;
 }
