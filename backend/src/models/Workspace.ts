@@ -186,4 +186,14 @@ export class WorkspaceModel {
 
     return result.rows;
   }
+
+  // Check if user can access workspace (is a member)
+  static async canUserAccess(workspace_id: string, user_id: string): Promise<boolean> {
+    const result = await db.query(
+      'SELECT 1 FROM workspace_members WHERE workspace_id = $1 AND user_id = $2',
+      [workspace_id, user_id]
+    );
+
+    return (result.rowCount ?? 0) > 0;
+  }
 }

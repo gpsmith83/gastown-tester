@@ -307,3 +307,128 @@ export interface UpdateContextSelectionRequest {
     is_selected: boolean;
   }[];
 }
+
+// Export tracking system types (B-507)
+export interface ExportJob {
+  id: string;
+  name: string;
+  description?: string;
+  export_type: 'requirements' | 'projects' | 'workspace';
+  format: 'csv' | 'json' | 'xlsx';
+
+  // Relationships
+  user_id: string;
+  workspace_id?: string;
+  project_id?: string;
+
+  // Export configuration
+  filters?: Record<string, any>;
+  columns?: string[];
+  options?: Record<string, any>;
+
+  // Status tracking
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  progress_percentage: number;
+
+  // Results and file handling
+  file_path?: string;
+  file_size_bytes?: number;
+  total_records?: number;
+  exported_records?: number;
+
+  // Error handling
+  error_message?: string;
+  error_details?: Record<string, any>;
+
+  // Timing
+  started_at?: Date;
+  completed_at?: Date;
+  expires_at?: Date;
+
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ExportConfirmation {
+  id: string;
+  export_job_id: string;
+  confirmed_by: string;
+  confirmation_message?: string;
+  satisfaction_rating?: number; // 1-5
+  feedback_comment?: string;
+  download_count: number;
+  last_downloaded_at?: Date;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ExportNotification {
+  id: string;
+  export_job_id: string;
+  recipient_id: string;
+  notification_type: 'completed' | 'failed' | 'reminder';
+  title: string;
+  message: string;
+  status: 'pending' | 'sent' | 'failed';
+  sent_at?: Date;
+  read_at?: Date;
+  channels: string[]; // ['web', 'email']
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ExportActivityLog {
+  id: string;
+  export_job_id: string;
+  activity_type: 'created' | 'started' | 'progress_updated' | 'completed' | 'failed' | 'downloaded';
+  description?: string;
+  user_id?: string;
+  ip_address?: string;
+  user_agent?: string;
+  details?: Record<string, any>;
+  created_at: Date;
+}
+
+// Request/Response DTOs for exports
+export interface CreateExportRequest {
+  name: string;
+  description?: string;
+  export_type: 'requirements' | 'projects' | 'workspace';
+  format?: 'csv' | 'json' | 'xlsx';
+  workspace_id?: string;
+  project_id?: string;
+  filters?: Record<string, any>;
+  columns?: string[];
+  options?: Record<string, any>;
+}
+
+export interface ExportJobWithDetails extends ExportJob {
+  user: User;
+  workspace?: Workspace;
+  project?: Project;
+  confirmation?: ExportConfirmation;
+  notifications?: ExportNotification[];
+}
+
+export interface ExportConfirmationRequest {
+  confirmation_message?: string;
+  satisfaction_rating?: number;
+  feedback_comment?: string;
+}
+
+export interface ExportHistoryResponse {
+  exports: ExportJobWithDetails[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+export interface ExportStatsResponse {
+  total_exports: number;
+  completed_exports: number;
+  failed_exports: number;
+  total_size_mb: number;
+  avg_satisfaction_rating?: number;
+  most_popular_format: string;
+  most_popular_type: string;
+}
