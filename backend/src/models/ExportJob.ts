@@ -148,7 +148,7 @@ export class ExportJobModel {
 
     return {
       exports: result.rows,
-      total: parseInt(countResult.rows[0].count),
+      total: Number(countResult.rows[0].count),
       page,
       per_page
     };
@@ -213,7 +213,7 @@ export class ExportJobModel {
 
     return {
       exports: result.rows,
-      total: parseInt(countResult.rows[0].count),
+      total: Number(countResult.rows[0].count),
       page,
       per_page
     };
@@ -230,7 +230,7 @@ export class ExportJobModel {
     exported_records?: number
   ): Promise<ExportJob | null> {
     const fields = ['status = $2'];
-    const values = [id, status];
+    const values: any[] = [id, status];
     let paramIndex = 3;
 
     if (progress_percentage !== undefined) {
@@ -464,11 +464,11 @@ export class ExportJobModel {
 
     const stats = result.rows[0];
     return {
-      total_exports: parseInt(stats.total_exports),
-      completed_exports: parseInt(stats.completed_exports),
-      failed_exports: parseInt(stats.failed_exports),
-      total_size_mb: parseFloat(stats.total_size_mb),
-      avg_satisfaction_rating: stats.avg_satisfaction_rating ? parseFloat(stats.avg_satisfaction_rating) : undefined,
+      total_exports: Number(stats.total_exports),
+      completed_exports: Number(stats.completed_exports),
+      failed_exports: Number(stats.failed_exports),
+      total_size_mb: Number(stats.total_size_mb),
+      avg_satisfaction_rating: stats.avg_satisfaction_rating ? Number(stats.avg_satisfaction_rating) : undefined,
       most_popular_format: stats.most_popular_format || 'csv',
       most_popular_type: stats.most_popular_type || 'requirements'
     };

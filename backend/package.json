@@ -28,7 +28,6 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
-    "@types/csv-writer": "^1.6.0",
     "@types/express": "^4.17.21",
     "@types/express-session": "^1.18.2",
     "@types/jsonwebtoken": "^9.0.10",

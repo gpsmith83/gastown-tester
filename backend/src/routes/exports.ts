@@ -7,7 +7,7 @@ import { WorkspaceModel } from '../models/Workspace';
 import { CreateExportRequest, ExportConfirmationRequest, User } from '../models/types';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as csv from 'csv-writer';
+const csv = require('csv-writer');
 
 const router = Router();
 
@@ -410,7 +410,7 @@ async function processExportJob(exportJobId: string) {
       throw new Error('Export job not found');
     }
 
-    let data: any[] = [];
+    let data: any = [];
     let filename: string;
 
     // Fetch data based on export type
@@ -421,7 +421,7 @@ async function processExportJob(exportJobId: string) {
         // Get all requirements in workspace
         data = await RequirementModel.findByUserId(exportJob.user_id);
         // Filter by workspace if needed
-        data = data.filter(req => req.project?.workspace_id === exportJob.workspace_id);
+        data = data.filter((req: any) => req.project?.workspace_id === exportJob.workspace_id);
       } else {
         data = await RequirementModel.findByUserId(exportJob.user_id);
       }
@@ -441,7 +441,7 @@ async function processExportJob(exportJobId: string) {
           : await ProjectModel.findByUserId(exportJob.user_id),
         requirements: exportJob.workspace_id
           ? (await RequirementModel.findByUserId(exportJob.user_id))
-              .filter(req => req.project?.workspace_id === exportJob.workspace_id)
+              .filter((req: any) => req.project?.workspace_id === exportJob.workspace_id)
           : await RequirementModel.findByUserId(exportJob.user_id)
       };
       filename = `workspace_export_${Date.now()}`;
