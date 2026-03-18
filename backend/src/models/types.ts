@@ -96,13 +96,34 @@ export interface Requirement {
   project_id: string;
   author_id: string;
   priority: number; // 1=highest, 5=lowest
-  status: 'draft' | 'active' | 'completed' | 'archived';
+  status: 'draft' | 'open' | 'in_progress' | 'in_review' | 'testing' | 'blocked' | 'completed' | 'archived' | 'cancelled';
   type: 'feature' | 'bug' | 'enhancement' | 'epic';
   github_issue_number?: number;
   github_issue_url?: string;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
+
+  // B-405: Assignment fields
+  assignee_id?: string;
+  assigned_at?: Date;
+  assigned_by?: string;
+
+  // B-406: Advanced prioritization
+  priority_label?: 'critical' | 'high' | 'medium' | 'low' | 'backlog';
+  due_date?: Date;
+  urgency_score?: number; // 0-100 calculated urgency
+
+  // B-407: Lifecycle management
+  estimated_hours?: number;
+  actual_hours?: number;
+  story_points?: number;
+  started_at?: Date;
+  completed_at?: Date;
+  resolution?: 'done' | 'wont_fix' | 'duplicate' | 'invalid';
+  resolution_notes?: string;
+  labels?: string[];
+  metadata?: any;
 }
 
 // Linear integration types (B-501)
@@ -306,4 +327,131 @@ export interface UpdateContextSelectionRequest {
     file_path: string;
     is_selected: boolean;
   }[];
+}
+
+// Advanced ticket workflow types (B-404, B-405, B-406, B-407)
+
+export interface RequirementComment {
+  id: string;
+  requirement_id: string;
+  author_id: string;
+  content: string;
+  comment_type: 'comment' | 'status_change' | 'assignment_change' | 'priority_change';
+  metadata?: any;
+  is_internal: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface RequirementCommentWithAuthor extends RequirementComment {
+  author: User;
+}
+
+export interface RequirementHistory {
+  id: string;
+  requirement_id: string;
+  changed_by: string;
+  field_name: string;
+  old_value?: string;
+  new_value?: string;
+  change_reason?: string;
+  created_at: Date;
+}
+
+export interface RequirementHistoryWithUser extends RequirementHistory {
+  user: User;
+}
+
+export interface RequirementWatcher {
+  id: string;
+  requirement_id: string;
+  user_id: string;
+  watch_type: 'all' | 'mentions' | 'status_changes';
+  created_at: Date;
+}
+
+export interface RequirementWatcherWithUser extends RequirementWatcher {
+  user: User;
+}
+
+export interface RequirementDependency {
+  id: string;
+  requirement_id: string;
+  dependency_id: string;
+  dependency_type: 'blocks' | 'relates_to' | 'duplicate_of';
+  created_by: string;
+  created_at: Date;
+}
+
+export interface RequirementDependencyWithDetails extends RequirementDependency {
+  dependency: Requirement;
+  created_by_user: User;
+}
+
+// Extended requirement with full details for workflow management
+export interface RequirementWorkflowDetails extends RequirementWithDetails {
+  assignee?: User;
+  assigned_by_user?: User;
+  comments: RequirementCommentWithAuthor[];
+  watchers: RequirementWatcherWithUser[];
+  dependencies: RequirementDependencyWithDetails[];
+  blocking: RequirementDependencyWithDetails[]; // Requirements this one blocks
+  history: RequirementHistoryWithUser[];
+}
+
+// Request DTOs for advanced workflow features
+export interface CreateRequirementCommentRequest {
+  content: string;
+  comment_type?: 'comment' | 'status_change' | 'assignment_change' | 'priority_change';
+  is_internal?: boolean;
+  metadata?: any;
+}
+
+export interface UpdateRequirementAssignmentRequest {
+  assignee_id?: string;
+  change_reason?: string;
+}
+
+export interface UpdateRequirementStatusRequest {
+  status: 'draft' | 'open' | 'in_progress' | 'in_review' | 'testing' | 'blocked' | 'completed' | 'archived' | 'cancelled';
+  resolution?: 'done' | 'wont_fix' | 'duplicate' | 'invalid';
+  resolution_notes?: string;
+  change_reason?: string;
+}
+
+export interface UpdateRequirementPriorityRequest {
+  priority?: number;
+  priority_label?: 'critical' | 'high' | 'medium' | 'low' | 'backlog';
+  urgency_score?: number;
+  due_date?: string; // ISO date string
+  change_reason?: string;
+}
+
+export interface UpdateRequirementLifecycleRequest {
+  estimated_hours?: number;
+  actual_hours?: number;
+  story_points?: number;
+  labels?: string[];
+  metadata?: any;
+}
+
+export interface CreateRequirementDependencyRequest {
+  dependency_id: string;
+  dependency_type: 'blocks' | 'relates_to' | 'duplicate_of';
+}
+
+export interface AddRequirementWatcherRequest {
+  watch_type?: 'all' | 'mentions' | 'status_changes';
+}
+
+// Enhanced requirement creation request with new fields
+export interface CreateRequirementAdvancedRequest extends CreateRequirementRequest {
+  assignee_id?: string;
+  priority_label?: 'critical' | 'high' | 'medium' | 'low' | 'backlog';
+  due_date?: string;
+  estimated_hours?: number;
+  story_points?: number;
+  labels?: string[];
+  watchers?: string[]; // User IDs to automatically watch this requirement
+  metadata?: any;
 }
