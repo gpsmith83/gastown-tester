@@ -1,6 +1,9 @@
 import { JobData, JobResult, JobHandler } from '../job-queue';
 import { GitHubService } from '../services/github-service';
-import { ContextSnapshotService } from '../services/context-snapshot-service';
+import {
+  ContextSnapshotDatabaseService,
+  ContextSnapshot
+} from '../../../../src/services/context-snapshot-db-service';
 
 /**
  * Context Ingestion Job
@@ -21,32 +24,15 @@ export interface ContextIngestionPayload {
   force_refresh?: boolean;
 }
 
-export interface ContextSnapshot {
-  id: string;
-  project_id: string;
-  source_file_path: string;
-  source_type_id: string;
-  content_text: string;
-  content_hash: string;
-  file_size: number;
-  last_modified: Date;
-  ingested_at: Date;
-  ingestion_metadata: {
-    github_repo_url: string;
-    github_sha?: string;
-    parsing_method: string;
-    word_count: number;
-    char_count: number;
-  };
-}
+// ContextSnapshot interface now imported from database service
 
 export class ContextIngestionJob implements JobHandler {
   private githubService: GitHubService;
-  private snapshotService: ContextSnapshotService;
+  private snapshotService: ContextSnapshotDatabaseService;
 
   constructor() {
     this.githubService = new GitHubService();
-    this.snapshotService = new ContextSnapshotService();
+    this.snapshotService = new ContextSnapshotDatabaseService();
   }
 
   async process(job: JobData): Promise<JobResult> {
