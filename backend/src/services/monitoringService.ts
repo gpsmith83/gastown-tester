@@ -10,7 +10,7 @@ export interface HealthStatus {
   database: 'connected' | 'unavailable';
   systemMetrics: {
     memoryUsageMb: number;
-    cpuUsagePercent: number | null;
+    cpuUsagePercent?: number;
     processId: number;
   };
   performanceMetrics: {

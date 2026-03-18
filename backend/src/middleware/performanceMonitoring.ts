@@ -8,7 +8,6 @@ declare global {
   namespace Express {
     interface Request {
       startTime?: number;
-      originalSend?: Response['send'];
       responseSize?: number;
     }
   }
@@ -17,13 +16,13 @@ declare global {
 /**
  * Get system resource usage (CPU and Memory)
  */
-function getResourceUsage(): { memoryUsageMb: number; cpuUsagePercent: number | null } {
+function getResourceUsage(): { memoryUsageMb: number; cpuUsagePercent?: number } {
   const memoryUsage = process.memoryUsage();
   const memoryUsageMb = memoryUsage.heapUsed / (1024 * 1024);
 
   // CPU usage calculation is approximate since we can't easily get instant CPU usage in Node.js
-  // For now, we'll use null and can enhance this with external libraries if needed
-  const cpuUsagePercent = null;
+  // For now, we'll use undefined and can enhance this with external libraries if needed
+  const cpuUsagePercent = undefined;
 
   return {
     memoryUsageMb: Math.round(memoryUsageMb * 100) / 100, // Round to 2 decimal places
@@ -210,7 +209,7 @@ export function performanceMonitoringMiddleware(req: Request, res: Response, nex
  */
 export function getCurrentSystemMetrics(): {
   memoryUsageMb: number;
-  cpuUsagePercent: number | null;
+  cpuUsagePercent?: number;
   uptime: number;
   processId: number;
 } {
