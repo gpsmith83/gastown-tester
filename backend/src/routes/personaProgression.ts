@@ -1,21 +1,18 @@
 import { Router, Request, Response } from 'express';
 import { PersonaProgressionService } from '../models/PersonaProgression';
 import { ProjectModel } from '../models/Project';
-import { CreatePersonaProgressionRequest, UpdatePersonaProgressionRequest } from '../models/types';
-import { authMiddleware } from '../middleware/auth';
+import { CreatePersonaProgressionRequest, UpdatePersonaProgressionRequest, User } from '../models/types';
+import { requireAuth } from '../config/auth';
 
 const router = Router();
 
 // Apply authentication middleware to all routes
-router.use(authMiddleware);
+router.use(requireAuth);
 
 // Create a new persona progression record
 router.post('/', async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
+    const user = req.user as User;
     const data: CreatePersonaProgressionRequest = req.body;
 
     // Validate required fields
@@ -24,12 +21,12 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Check if user can access the project
-    const canAccess = await ProjectModel.canUserAccess(data.project_id, req.user.id);
+    const canAccess = await ProjectModel.canUserAccess(data.project_id, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this project' });
     }
 
-    const progression = await PersonaProgressionService.create(data, req.user.id);
+    const progression = await PersonaProgressionService.create(data, user.id);
     res.status(201).json(progression);
   } catch (error) {
     console.error('Failed to create persona progression:', error);
@@ -40,14 +37,11 @@ router.post('/', async (req: Request, res: Response) => {
 // Get progression record by ID
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
+    const user = req.user as User;
     const { id } = req.params;
 
     // Check if user can access this progression record
-    const canAccess = await PersonaProgressionService.canUserAccess(id, req.user.id);
+    const canAccess = await PersonaProgressionService.canUserAccess(id, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this progression record' });
     }
@@ -67,15 +61,12 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Update progression record
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
+    const user = req.user as User;
     const { id } = req.params;
     const data: UpdatePersonaProgressionRequest = req.body;
 
     // Check if user can access this progression record
-    const canAccess = await PersonaProgressionService.canUserAccess(id, req.user.id);
+    const canAccess = await PersonaProgressionService.canUserAccess(id, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this progression record' });
     }
@@ -95,16 +86,13 @@ router.put('/:id', async (req: Request, res: Response) => {
 // Get progression history for a specific session
 router.get('/session/:sessionId', async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
+    const user = req.user as User;
     const { sessionId } = req.params;
     const progressionHistory = await PersonaProgressionService.findBySessionId(sessionId);
 
     // Check if user can access at least one record (they all should belong to same project)
     if (progressionHistory.length > 0) {
-      const canAccess = await ProjectModel.canUserAccess(progressionHistory[0].project_id, req.user.id);
+      const canAccess = await ProjectModel.canUserAccess(progressionHistory[0].project_id, user.id);
       if (!canAccess) {
         return res.status(403).json({ error: 'Access denied to this session' });
       }
@@ -120,14 +108,11 @@ router.get('/session/:sessionId', async (req: Request, res: Response) => {
 // Get progression history for a project
 router.get('/project/:projectId', async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
+    const user = req.user as User;
     const { projectId } = req.params;
 
     // Check if user can access the project
-    const canAccess = await ProjectModel.canUserAccess(projectId, req.user.id);
+    const canAccess = await ProjectModel.canUserAccess(projectId, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this project' });
     }
@@ -143,21 +128,18 @@ router.get('/project/:projectId', async (req: Request, res: Response) => {
 // Get current session state for user in project
 router.get('/project/:projectId/current-session', async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
+    const user = req.user as User;
     const { projectId } = req.params;
     const { session_id } = req.query;
 
     // Check if user can access the project
-    const canAccess = await ProjectModel.canUserAccess(projectId, req.user.id);
+    const canAccess = await ProjectModel.canUserAccess(projectId, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this project' });
     }
 
     const currentSession = await PersonaProgressionService.getCurrentSession(
-      req.user.id,
+      user.id,
       projectId,
       session_id as string | undefined
     );
@@ -176,15 +158,12 @@ router.get('/project/:projectId/current-session', async (req: Request, res: Resp
 // Get specialist usage history for a project
 router.get('/project/:projectId/specialists', async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
+    const user = req.user as User;
     const { projectId } = req.params;
     const limit = parseInt(req.query.limit as string) || 50;
 
     // Check if user can access the project
-    const canAccess = await ProjectModel.canUserAccess(projectId, req.user.id);
+    const canAccess = await ProjectModel.canUserAccess(projectId, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this project' });
     }
@@ -200,14 +179,11 @@ router.get('/project/:projectId/specialists', async (req: Request, res: Response
 // Get stage analytics for a project
 router.get('/project/:projectId/stages', async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
+    const user = req.user as User;
     const { projectId } = req.params;
 
     // Check if user can access the project
-    const canAccess = await ProjectModel.canUserAccess(projectId, req.user.id);
+    const canAccess = await ProjectModel.canUserAccess(projectId, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this project' });
     }
@@ -223,14 +199,11 @@ router.get('/project/:projectId/stages', async (req: Request, res: Response) => 
 // Get comprehensive analytics for a project
 router.get('/project/:projectId/analytics', async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
+    const user = req.user as User;
     const { projectId } = req.params;
 
     // Check if user can access the project
-    const canAccess = await ProjectModel.canUserAccess(projectId, req.user.id);
+    const canAccess = await ProjectModel.canUserAccess(projectId, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this project' });
     }
@@ -246,10 +219,7 @@ router.get('/project/:projectId/analytics', async (req: Request, res: Response) 
 // Generate a new session ID
 router.post('/generate-session', async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
+    const user = req.user as User;
     const sessionId = PersonaProgressionService.generateSessionId();
     res.json({ session_id: sessionId });
   } catch (error) {
@@ -261,16 +231,13 @@ router.post('/generate-session', async (req: Request, res: Response) => {
 // Delete progression records for a session (cleanup)
 router.delete('/session/:sessionId', async (req: Request, res: Response) => {
   try {
-    if (!req.user?.id) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
+    const user = req.user as User;
     const { sessionId } = req.params;
 
     // First check if user has access to this session
     const sessionData = await PersonaProgressionService.findBySessionId(sessionId);
     if (sessionData.length > 0) {
-      const canAccess = await ProjectModel.canUserAccess(sessionData[0].project_id, req.user.id);
+      const canAccess = await ProjectModel.canUserAccess(sessionData[0].project_id, user.id);
       if (!canAccess) {
         return res.status(403).json({ error: 'Access denied to this session' });
       }
