@@ -59,11 +59,12 @@ export class ExportService {
       throw new Error('No validated Linear connection found for this project');
     }
 
-    // We need to get the API token from somewhere secure
-    // For now, we'll require it to be passed in the target_config
+    // SECURITY: API tokens should never be stored in batch configuration
+    // They must be provided securely at processing time
+    // TODO: Implement secure token retrieval from request context or encrypted storage
     const apiToken = batch.target_config.api_token;
     if (!apiToken) {
-      throw new Error('Linear API token not provided in batch configuration');
+      throw new Error('Linear API token not provided. Tokens must be supplied securely at processing time.');
     }
 
     // Verify token matches the stored connection
@@ -315,7 +316,11 @@ export class ExportService {
 
     const batches = batchesResult.rows.map(batch => {
       if (batch.target_config) {
-        batch.target_config = JSON.parse(batch.target_config);
+        try {
+          batch.target_config = JSON.parse(batch.target_config);
+        } catch {
+          batch.target_config = {};
+        }
       }
       return batch;
     });

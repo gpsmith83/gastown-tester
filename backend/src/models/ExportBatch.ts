@@ -9,10 +9,20 @@ import {
 
 export class ExportBatchModel {
 
+  // Helper method for safe JSON parsing
+  private static safeJsonParse(json: string, fallback: any = {}): any {
+    try {
+      return JSON.parse(json);
+    } catch {
+      return fallback;
+    }
+  }
+
   // Create a new export batch
   static async create(
     data: CreateExportBatchRequest,
-    created_by: string
+    created_by: string,
+    project_id: string
   ): Promise<ExportBatch> {
     const client = await db.connect();
 
@@ -28,9 +38,7 @@ export class ExportBatchModel {
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *`,
         [
-          data.requirement_ids.length > 0 ?
-            (await client.query('SELECT project_id FROM requirements WHERE id = $1', [data.requirement_ids[0]])).rows[0]?.project_id
-            : null,
+          project_id,
           data.name,
           data.description || null,
           data.target_type,
@@ -78,7 +86,7 @@ export class ExportBatchModel {
 
     // Parse target_config JSON
     if (batch.target_config) {
-      batch.target_config = JSON.parse(batch.target_config);
+      batch.target_config = this.safeJsonParse(batch.target_config);
     }
 
     const itemsResult = await db.query(
@@ -111,7 +119,7 @@ export class ExportBatchModel {
 
     // Parse target_config JSON
     if (batch.target_config) {
-      batch.target_config = JSON.parse(batch.target_config);
+      batch.target_config = this.safeJsonParse(batch.target_config);
     }
 
     return batch;
@@ -178,7 +186,7 @@ export class ExportBatchModel {
 
     const batch = result.rows[0] || null;
     if (batch && batch.target_config) {
-      batch.target_config = JSON.parse(batch.target_config);
+      batch.target_config = this.safeJsonParse(batch.target_config);
     }
 
     return batch;
@@ -245,7 +253,7 @@ export class ExportBatchModel {
 
     return result.rows.map(batch => {
       if (batch.target_config) {
-        batch.target_config = JSON.parse(batch.target_config);
+        batch.target_config = this.safeJsonParse(batch.target_config);
       }
       return batch;
     });

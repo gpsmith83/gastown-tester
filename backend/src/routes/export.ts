@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../config/auth';
+import { db } from '../config/database';
 import { ProjectModel } from '../models/Project';
 import { ExportBatchModel } from '../models/ExportBatch';
 import { ExportService } from '../services/ExportService';
@@ -90,8 +91,8 @@ router.post('/projects/:projectId/exports', async (req: Request, res: Response) 
     // Verify all requirements belong to this project
     const requirementCheck = await Promise.all(
       data.requirement_ids.map(async (reqId) => {
-        const req = await ExportBatchModel.findById(reqId);
-        return req?.project_id === projectId;
+        const result = await db.query('SELECT project_id FROM requirements WHERE id = $1', [reqId]);
+        return result.rows[0]?.project_id === projectId;
       })
     );
 
@@ -103,7 +104,7 @@ router.post('/projects/:projectId/exports', async (req: Request, res: Response) 
     }
 
     // Create the export batch
-    const batch = await ExportBatchModel.create(data, user.id);
+    const batch = await ExportBatchModel.create(data, user.id, projectId);
 
     res.status(201).json({
       batch,
