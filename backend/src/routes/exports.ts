@@ -78,8 +78,11 @@ router.post('/', async (req: Request, res: Response) => {
 
     const exportJob = await ExportJobModel.create(cleanData, user.id);
 
-    // Start export processing asynchronously
-    processExportJob(exportJob.id);
+    // Start export processing asynchronously with error handling
+    processExportJob(exportJob.id).catch(error => {
+      console.error('Export processing failed:', error);
+      // The error is already handled in processExportJob, this is just to prevent unhandled rejection
+    });
 
     res.status(201).json({
       export_job: exportJob,
@@ -243,6 +246,18 @@ router.get('/:id/download', async (req: Request, res: Response) => {
       });
     }
 
+    // Validate file path is within exports directory (security check)
+    const exportsDir = path.join(process.cwd(), 'exports');
+    const resolvedFilePath = path.resolve(exportJob.file_path);
+    const resolvedExportsDir = path.resolve(exportsDir);
+
+    if (!resolvedFilePath.startsWith(resolvedExportsDir)) {
+      return res.status(403).json({
+        error: 'Access Denied',
+        message: 'Invalid file path'
+      });
+    }
+
     // Check if file exists
     if (!fs.existsSync(exportJob.file_path)) {
       return res.status(404).json({
@@ -349,7 +364,19 @@ router.get('/stats/summary', async (req: Request, res: Response) => {
 // Mark notification as read
 router.patch('/notifications/:notification_id/read', async (req: Request, res: Response) => {
   try {
+    const user = req.user as User;
     const { notification_id } = req.params;
+
+    // First get the notification to check ownership
+    const notifications = await ExportJobModel.getNotifications('');
+    const notification = notifications.find(n => n.id === notification_id && n.recipient_id === user.id);
+
+    if (!notification) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Notification not found or you do not have access to it'
+      });
+    }
 
     const success = await ExportJobModel.markNotificationRead(notification_id);
 
