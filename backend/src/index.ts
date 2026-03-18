@@ -21,8 +21,10 @@ import linearRoutes from './routes/linear';
 import githubRepositoryRoutes from './routes/github-repositories';
 import jobRoutes from './routes/jobs';
 import contextSourceRoutes from './routes/context-sources';
+import monitoringRoutes from './routes/monitoring';
 import { globalAIService } from './services/ai-provider';
 import { sanitizeResponse } from './middleware/sanitizeResponse';
+import { performanceMonitoringMiddleware } from './middleware/performanceMonitoring';
 
 // Import correlation middleware and structured logging
 import { correlationMiddleware } from './middleware/correlation';
@@ -96,6 +98,9 @@ app.use(morgan('combined', {
 // Correlation ID middleware (must be before other logging middleware)
 app.use(correlationMiddleware);
 
+// Performance monitoring middleware (must be after correlation middleware)
+app.use(performanceMonitoringMiddleware);
+
 // JSON parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -146,7 +151,8 @@ app.get('/', (req: Request, res: Response) => {
       linear: '/api/linear',
       githubRepositories: '/api/github-repositories',
       jobs: '/api/jobs',
-      context_sources: '/api/context-sources'
+      context_sources: '/api/context-sources',
+      monitoring: '/api/monitoring'
     }
   });
 });
@@ -161,6 +167,7 @@ app.use('/api/linear', linearRoutes);
 app.use('/api/github-repositories', githubRepositoryRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/context-sources', contextSourceRoutes);
+app.use('/api/monitoring', monitoringRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
