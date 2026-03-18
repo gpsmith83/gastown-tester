@@ -379,7 +379,13 @@ export class LinearService {
         }
       `;
 
-      const response = await this.makeRequest(issueQuery, {}, apiToken);
+      const response = await this.makeRequest<{
+        organization: {
+          teams: {
+            nodes: Array<{ id: string; name: string }>;
+          };
+        };
+      }>(issueQuery, {}, apiToken);
 
       if (response.data?.organization?.teams?.nodes) {
         permissions.push('read_teams');
