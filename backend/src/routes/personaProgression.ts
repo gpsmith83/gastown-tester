@@ -1,14 +1,19 @@
 import { Router, Request, Response } from 'express';
+import { requireAuth } from '../config/auth';
 import { RequirementModel } from '../models/Requirement';
 import { ReadinessGateOverrideModel, PersonaProgressionGateModel } from '../models/ReadinessGateOverride';
 import {
   CreateReadinessGateOverrideRequest,
   UpdateReadinessGateOverrideRequest,
   CreatePersonaProgressionGateRequest,
-  UpdatePersonaProgressionGateRequest
+  UpdatePersonaProgressionGateRequest,
+  User
 } from '../models/types';
 
 const router = Router();
+
+// All persona progression routes require authentication
+router.use(requireAuth);
 
 // B-306: Readiness Gate Override Routes
 
@@ -16,14 +21,10 @@ const router = Router();
 router.get('/readiness-overrides/requirement/:requirementId', async (req: Request, res: Response) => {
   try {
     const { requirementId } = req.params;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    const user = req.user as User;
 
     // Check if user can access this requirement
-    const canAccess = await RequirementModel.canUserAccess(requirementId, userId);
+    const canAccess = await RequirementModel.canUserAccess(requirementId, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this requirement' });
     }
@@ -40,14 +41,10 @@ router.get('/readiness-overrides/requirement/:requirementId', async (req: Reques
 router.get('/readiness-overrides/requirement/:requirementId/dimension/:dimensionId', async (req: Request, res: Response) => {
   try {
     const { requirementId, dimensionId } = req.params;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    const user = req.user as User;
 
     // Check if user can access this requirement
-    const canAccess = await RequirementModel.canUserAccess(requirementId, userId);
+    const canAccess = await RequirementModel.canUserAccess(requirementId, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this requirement' });
     }
@@ -63,11 +60,7 @@ router.get('/readiness-overrides/requirement/:requirementId/dimension/:dimension
 // Create a new readiness gate override
 router.post('/readiness-overrides', async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    const user = req.user as User;
 
     const data: CreateReadinessGateOverrideRequest = req.body;
 
@@ -77,7 +70,7 @@ router.post('/readiness-overrides', async (req: Request, res: Response) => {
     }
 
     // Check if user can access this requirement
-    const canAccess = await RequirementModel.canUserAccess(data.requirement_id, userId);
+    const canAccess = await RequirementModel.canUserAccess(data.requirement_id, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this requirement' });
     }
@@ -95,7 +88,7 @@ router.post('/readiness-overrides', async (req: Request, res: Response) => {
       });
     }
 
-    const override = await ReadinessGateOverrideModel.create(data, userId);
+    const override = await ReadinessGateOverrideModel.create(data, user.id);
     const overrideWithUser = await ReadinessGateOverrideModel.findByIdWithUser(override.id);
 
     res.status(201).json({
@@ -112,14 +105,10 @@ router.post('/readiness-overrides', async (req: Request, res: Response) => {
 router.put('/readiness-overrides/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    const user = req.user as User;
 
     // Check if user can access this override
-    const canAccess = await ReadinessGateOverrideModel.canUserAccess(id, userId);
+    const canAccess = await ReadinessGateOverrideModel.canUserAccess(id, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this override' });
     }
@@ -146,14 +135,10 @@ router.put('/readiness-overrides/:id', async (req: Request, res: Response) => {
 router.delete('/readiness-overrides/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    const user = req.user as User;
 
     // Check if user can access this override
-    const canAccess = await ReadinessGateOverrideModel.canUserAccess(id, userId);
+    const canAccess = await ReadinessGateOverrideModel.canUserAccess(id, user.id);
     if (!canAccess) {
       return res.status(403).json({ error: 'Access denied to this override' });
     }
@@ -176,11 +161,7 @@ router.delete('/readiness-overrides/:id', async (req: Request, res: Response) =>
 router.get('/progression-gates/project/:projectId', async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    const user = req.user as User;
 
     // TODO: Add project access check once ProjectModel is available
     // For now, assuming user has access if they can authenticate
@@ -197,11 +178,7 @@ router.get('/progression-gates/project/:projectId', async (req: Request, res: Re
 router.get('/progression-gates/project/:projectId/persona/:personaType', async (req: Request, res: Response) => {
   try {
     const { projectId, personaType } = req.params;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    const user = req.user as User;
 
     const gates = await PersonaProgressionGateModel.findByPersonaType(projectId, personaType);
     res.json({ gates });
@@ -214,11 +191,7 @@ router.get('/progression-gates/project/:projectId/persona/:personaType', async (
 // Create a new persona progression gate
 router.post('/progression-gates', async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    const user = req.user as User;
 
     const data: CreatePersonaProgressionGateRequest = req.body;
 
@@ -242,11 +215,7 @@ router.post('/progression-gates', async (req: Request, res: Response) => {
 router.put('/progression-gates/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    const user = req.user as User;
 
     const data: UpdatePersonaProgressionGateRequest = req.body;
     const gate = await PersonaProgressionGateModel.update(id, data);
@@ -269,11 +238,7 @@ router.put('/progression-gates/:id', async (req: Request, res: Response) => {
 router.delete('/progression-gates/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    const user = req.user as User;
 
     const success = await PersonaProgressionGateModel.delete(id);
     if (!success) {
