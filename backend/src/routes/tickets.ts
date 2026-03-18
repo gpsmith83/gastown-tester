@@ -298,14 +298,13 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const user = req.user as User;
     const { id } = req.params;
 
-    // Check if user is the author of this ticket or has access
+    // Check if user is the author of this ticket
     const isAuthor = await TicketModel.isUserAuthor(id, user.id);
-    const hasAccess = await TicketModel.canUserAccess(id, user.id);
 
-    if (!isAuthor && !hasAccess) {
+    if (!isAuthor) {
       return res.status(403).json({
         error: 'Access Denied',
-        message: 'You can only delete your own tickets or need project access'
+        message: 'You can only delete your own tickets'
       });
     }
 

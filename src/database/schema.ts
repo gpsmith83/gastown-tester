@@ -26,6 +26,15 @@ export const workspaces = pgTable('workspaces', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// Workspace members table
+export const workspaceMembers = pgTable('workspace_members', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id),
+  userId: uuid('user_id').notNull().references(() => users.id),
+  role: varchar('role', { length: 50 }).notNull().default('member'), // owner, admin, member
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 // Projects table
 export const projects = pgTable('projects', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -76,6 +85,7 @@ export const tickets = pgTable('tickets', {
 // Define relationships
 export const usersRelations = relations(users, ({ many }) => ({
   ownedWorkspaces: many(workspaces),
+  workspaceMemberships: many(workspaceMembers),
   authoredRequirements: many(requirements),
   authoredTickets: many(tickets),
   assignedTickets: many(tickets),
@@ -87,6 +97,18 @@ export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
     references: [users.id],
   }),
   projects: many(projects),
+  members: many(workspaceMembers),
+}));
+
+export const workspaceMembersRelations = relations(workspaceMembers, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [workspaceMembers.workspaceId],
+    references: [workspaces.id],
+  }),
+  user: one(users, {
+    fields: [workspaceMembers.userId],
+    references: [users.id],
+  }),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
@@ -128,11 +150,13 @@ export const ticketsRelations = relations(tickets, ({ one }) => ({
 export const schema = {
   users,
   workspaces,
+  workspaceMembers,
   projects,
   requirements,
   tickets,
   usersRelations,
   workspacesRelations,
+  workspaceMembersRelations,
   projectsRelations,
   requirementsRelations,
   ticketsRelations,

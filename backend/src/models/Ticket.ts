@@ -260,10 +260,10 @@ export class TicketModel {
        FROM tickets t
        INNER JOIN projects p ON t.project_id = p.id
        INNER JOIN workspaces w ON p.workspace_id = w.id
+       INNER JOIN workspace_members wm ON w.id = wm.workspace_id
        INNER JOIN users ta ON t.author_id = ta.id
        LEFT JOIN users a ON t.assignee_id = a.id
-       WHERE (w.owner_id = $1 OR t.author_id = $1 OR t.assignee_id = $1)
-         AND t.is_active = true
+       WHERE wm.user_id = $1 AND t.is_active = true
        ORDER BY t.updated_at DESC`,
       [user_id]
     );
@@ -368,8 +368,8 @@ export class TicketModel {
       `SELECT 1 FROM tickets t
        INNER JOIN projects p ON t.project_id = p.id
        INNER JOIN workspaces w ON p.workspace_id = w.id
-       WHERE t.id = $1 AND (w.owner_id = $2 OR t.author_id = $2 OR t.assignee_id = $2)
-         AND t.is_active = true`,
+       INNER JOIN workspace_members wm ON w.id = wm.workspace_id
+       WHERE t.id = $1 AND wm.user_id = $2 AND t.is_active = true`,
       [ticket_id, user_id]
     );
 
