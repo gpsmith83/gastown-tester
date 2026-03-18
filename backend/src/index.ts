@@ -17,6 +17,7 @@ import workspaceRoutes from './routes/workspaces';
 import projectRoutes from './routes/projects';
 import aiRoutes from './routes/ai';
 import requirementRoutes from './routes/requirements';
+import ticketRoutes from './routes/tickets';
 import linearRoutes from './routes/linear';
 import githubRepositoryRoutes from './routes/github-repositories';
 import jobRoutes from './routes/jobs';
@@ -143,6 +144,7 @@ app.get('/', (req: Request, res: Response) => {
       projects: '/api/projects',
       ai: '/api/ai',
       requirements: '/api/requirements',
+      tickets: '/api/tickets',
       linear: '/api/linear',
       githubRepositories: '/api/github-repositories',
       jobs: '/api/jobs',
@@ -157,6 +159,7 @@ app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/requirements', requirementRoutes);
+app.use('/api/tickets', ticketRoutes);
 app.use('/api/linear', linearRoutes);
 app.use('/api/github-repositories', githubRepositoryRoutes);
 app.use('/api/jobs', jobRoutes);

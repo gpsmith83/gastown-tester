@@ -57,10 +57,28 @@ export const requirements = pgTable('requirements', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// Tickets table
+export const tickets = pgTable('tickets', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description'),
+  projectId: uuid('project_id').notNull().references(() => projects.id),
+  assigneeId: uuid('assignee_id').references(() => users.id),
+  authorId: uuid('author_id').notNull().references(() => users.id),
+  priority: integer('priority').notNull().default(3), // 1=highest, 5=lowest
+  status: varchar('status', { length: 50 }).notNull().default('open'), // open, in_progress, completed, closed, cancelled
+  type: varchar('type', { length: 50 }).notNull().default('task'), // bug, feature, task, enhancement
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 // Define relationships
 export const usersRelations = relations(users, ({ many }) => ({
   ownedWorkspaces: many(workspaces),
   authoredRequirements: many(requirements),
+  authoredTickets: many(tickets),
+  assignedTickets: many(tickets),
 }));
 
 export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
@@ -77,6 +95,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     references: [workspaces.id],
   }),
   requirements: many(requirements),
+  tickets: many(tickets),
 }));
 
 export const requirementsRelations = relations(requirements, ({ one }) => ({
@@ -90,14 +109,31 @@ export const requirementsRelations = relations(requirements, ({ one }) => ({
   }),
 }));
 
+export const ticketsRelations = relations(tickets, ({ one }) => ({
+  project: one(projects, {
+    fields: [tickets.projectId],
+    references: [projects.id],
+  }),
+  author: one(users, {
+    fields: [tickets.authorId],
+    references: [users.id],
+  }),
+  assignee: one(users, {
+    fields: [tickets.assigneeId],
+    references: [users.id],
+  }),
+}));
+
 // Export all tables for migrations
 export const schema = {
   users,
   workspaces,
   projects,
   requirements,
+  tickets,
   usersRelations,
   workspacesRelations,
   projectsRelations,
   requirementsRelations,
+  ticketsRelations,
 };
