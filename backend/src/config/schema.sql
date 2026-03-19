@@ -137,6 +137,39 @@ CREATE INDEX IF NOT EXISTS idx_requirements_status ON requirements(status);
 CREATE INDEX IF NOT EXISTS idx_requirements_is_active ON requirements(is_active);
 CREATE INDEX IF NOT EXISTS idx_requirements_priority ON requirements(priority);
 
+-- Persona progression history table (B-302)
+CREATE TABLE IF NOT EXISTS persona_progression_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+
+    -- Progression session metadata
+    session_id VARCHAR(255) NOT NULL, -- Unique identifier for each progression session
+    session_type VARCHAR(50) DEFAULT 'refinement', -- refinement, guidance, validation, etc.
+
+    -- Specialist selection tracking
+    specialist_selected VARCHAR(255), -- The specialist type that was selected
+    specialist_reason TEXT, -- Why this specialist was chosen
+    previous_specialists JSONB DEFAULT '[]'::jsonb, -- History of specialists used in this session
+
+    -- Refinement outcome tracking
+    refinement_stage VARCHAR(100), -- problem_understanding, solution_design, validation, etc.
+    refinement_outcome VARCHAR(50), -- completed, in_progress, abandoned, escalated
+    outcome_data JSONB DEFAULT '{}'::jsonb, -- Structured data about the outcome
+
+    -- Progression context
+    current_persona_stack JSONB, -- The persona stack at this progression step
+    progression_context JSONB DEFAULT '{}'::jsonb, -- Additional context data
+
+    -- Metrics and scoring
+    progression_score DECIMAL(5,2), -- 0-100 score of progression quality
+    time_spent_minutes INTEGER, -- Time spent in this progression step
+    user_satisfaction INTEGER CHECK (user_satisfaction BETWEEN 1 AND 5), -- Optional user rating
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION trigger_set_timestamp()
 RETURNS TRIGGER AS $$
@@ -176,3 +209,19 @@ CREATE TRIGGER set_timestamp_requirements
     BEFORE UPDATE ON requirements
     FOR EACH ROW
     EXECUTE PROCEDURE trigger_set_timestamp();
+
+DROP TRIGGER IF EXISTS set_timestamp_persona_progression_history ON persona_progression_history;
+CREATE TRIGGER set_timestamp_persona_progression_history
+    BEFORE UPDATE ON persona_progression_history
+    FOR EACH ROW
+    EXECUTE PROCEDURE trigger_set_timestamp();
+
+-- Indexes for persona_progression_history table
+CREATE INDEX IF NOT EXISTS idx_persona_progression_project_id ON persona_progression_history(project_id);
+CREATE INDEX IF NOT EXISTS idx_persona_progression_user_id ON persona_progression_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_persona_progression_session_id ON persona_progression_history(session_id);
+CREATE INDEX IF NOT EXISTS idx_persona_progression_session_type ON persona_progression_history(session_type);
+CREATE INDEX IF NOT EXISTS idx_persona_progression_specialist ON persona_progression_history(specialist_selected);
+CREATE INDEX IF NOT EXISTS idx_persona_progression_stage ON persona_progression_history(refinement_stage);
+CREATE INDEX IF NOT EXISTS idx_persona_progression_outcome ON persona_progression_history(refinement_outcome);
+CREATE INDEX IF NOT EXISTS idx_persona_progression_created_at ON persona_progression_history(created_at);

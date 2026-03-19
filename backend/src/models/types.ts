@@ -343,235 +343,100 @@ export interface UpdateContextSelectionRequest {
   }[];
 }
 
-// Export tracking system types (B-507)
-export interface ExportJob {
-  id: string;
-  name: string;
-  description?: string;
-  export_type: 'requirements' | 'projects' | 'workspace';
-  format: 'csv' | 'json' | 'xlsx';
-
-  // Relationships
-  user_id: string;
-  workspace_id?: string;
-  project_id?: string;
-
-  // Export configuration
-  filters?: Record<string, any>;
-  columns?: string[];
-  options?: Record<string, any>;
-
-  // Status tracking
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
-  progress_percentage: number;
-
-  // Results and file handling
-  file_path?: string;
-  file_size_bytes?: number;
-  total_records?: number;
-  exported_records?: number;
-
-  // Error handling
-  error_message?: string;
-  error_details?: Record<string, any>;
-
-  // Timing
-  started_at?: Date;
-  completed_at?: Date;
-  expires_at?: Date;
-
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface ExportConfirmation {
-  id: string;
-  export_job_id: string;
-  confirmed_by: string;
-  confirmation_message?: string;
-  satisfaction_rating?: number; // 1-5
-  feedback_comment?: string;
-  download_count: number;
-  last_downloaded_at?: Date;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface ExportNotification {
-  id: string;
-  export_job_id: string;
-  recipient_id: string;
-  notification_type: 'completed' | 'failed' | 'reminder';
-  title: string;
-  message: string;
-  status: 'pending' | 'sent' | 'failed';
-  sent_at?: Date;
-  read_at?: Date;
-  channels: string[]; // ['web', 'email']
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface ExportActivityLog {
-  id: string;
-  export_job_id: string;
-  activity_type: 'created' | 'started' | 'progress_updated' | 'completed' | 'failed' | 'downloaded';
-  description?: string;
-  user_id?: string;
-  ip_address?: string;
-  user_agent?: string;
-  details?: Record<string, any>;
-  created_at: Date;
-}
-
-// Request/Response DTOs for exports
-export interface CreateExportRequest {
-  name: string;
-  description?: string;
-  export_type: 'requirements' | 'projects' | 'workspace';
-  format?: 'csv' | 'json' | 'xlsx';
-  workspace_id?: string;
-  project_id?: string;
-  filters?: Record<string, any>;
-  columns?: string[];
-  options?: Record<string, any>;
-}
-
-export interface ExportJobWithDetails extends ExportJob {
-  user: User;
-  workspace?: Workspace;
-  project?: Project;
-  confirmation?: ExportConfirmation;
-  notifications?: ExportNotification[];
-}
-
-export interface ExportConfirmationRequest {
-  confirmation_message?: string;
-  satisfaction_rating?: number;
-  feedback_comment?: string;
-}
-
-export interface ExportHistoryResponse {
-  exports: ExportJobWithDetails[];
-  total: number;
-  page: number;
-  per_page: number;
-}
-
-export interface ExportStatsResponse {
-  total_exports: number;
-  completed_exports: number;
-  failed_exports: number;
-  total_size_mb: number;
-  avg_satisfaction_rating?: number;
-  most_popular_format: string;
-  most_popular_type: string;
-}// Export batch types (B-503)
-export interface ExportBatch {
+// Persona progression types (B-302)
+export interface PersonaProgressionHistory {
   id: string;
   project_id: string;
-  name: string;
-  description?: string;
+  user_id: string;
 
-  // Export target configuration
-  target_type: 'linear';
-  target_config: any; // JSON configuration for the target (Linear workspace, team, etc.)
+  // Progression session metadata
+  session_id: string;
+  session_type: 'refinement' | 'guidance' | 'validation' | 'selection' | 'custom';
 
-  // Batch status and progress
-  status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'partially_completed';
-  total_items: number;
-  processed_items: number;
-  failed_items: number;
+  // Specialist selection tracking
+  specialist_selected?: string;
+  specialist_reason?: string;
+  previous_specialists?: string[];
 
-  // Metadata
-  created_by: string; // user_id
-  started_at?: Date;
-  completed_at?: Date;
-  error_message?: string;
+  // Refinement outcome tracking
+  refinement_stage?: string;
+  refinement_outcome?: 'completed' | 'in_progress' | 'abandoned' | 'escalated';
+  outcome_data?: any;
 
-  // Settings
-  retry_failed: boolean;
-  max_retries: number;
+  // Progression context
+  current_persona_stack?: any;
+  progression_context?: any;
+
+  // Metrics and scoring
+  progression_score?: number;
+  time_spent_minutes?: number;
+  user_satisfaction?: number;
 
   created_at: Date;
   updated_at: Date;
 }
 
-export interface ExportBatchItem {
-  id: string;
-  batch_id: string;
-  requirement_id: string;
-
-  // Item status and result
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  external_id?: string; // ID in the target system (e.g., Linear issue ID)
-  external_url?: string; // URL in the target system (e.g., Linear issue URL)
-
-  // Error handling
-  error_message?: string;
-  retry_count: number;
-  last_attempted_at?: Date;
-  completed_at?: Date;
-// Linear issue creation types (B-504)
-export interface LinearIssueCreateRequest {
-  title: string;
-  description?: string;
-  teamId: string;
-  projectId?: string;
-  priority?: number;
-  labels?: string[];
-  assigneeId?: string;
-  stateId?: string;
+export interface CreatePersonaProgressionRequest {
+  project_id: string;
+  session_id: string;
+  session_type?: 'refinement' | 'guidance' | 'validation' | 'selection' | 'custom';
+  specialist_selected?: string;
+  specialist_reason?: string;
+  previous_specialists?: string[];
+  refinement_stage?: string;
+  refinement_outcome?: 'completed' | 'in_progress' | 'abandoned' | 'escalated';
+  outcome_data?: any;
+  current_persona_stack?: any;
+  progression_context?: any;
+  progression_score?: number;
+  time_spent_minutes?: number;
+  user_satisfaction?: number;
 }
 
-export interface LinearIssueCreateResponse {
-  success: boolean;
-  issue?: {
-    id: string;
-    identifier: string; // e.g., "TEAM-123"
-    title: string;
-    url: string;
+export interface UpdatePersonaProgressionRequest {
+  specialist_selected?: string;
+  specialist_reason?: string;
+  previous_specialists?: string[];
+  refinement_stage?: string;
+  refinement_outcome?: 'completed' | 'in_progress' | 'abandoned' | 'escalated';
+  outcome_data?: any;
+  current_persona_stack?: any;
+  progression_context?: any;
+  progression_score?: number;
+  time_spent_minutes?: number;
+  user_satisfaction?: number;
+}
+
+export interface PersonaProgressionSession {
+  session_id: string;
+  project_id: string;
+  user_id: string;
+  session_type: string;
+  history: PersonaProgressionHistory[];
+  current_specialist?: string;
+  progression_stats: {
+    total_steps: number;
+    completed_steps: number;
+    average_score?: number;
+    total_time_minutes: number;
   };
-  error?: string;
+  started_at: Date;
+  last_activity: Date;
 }
 
-export interface LinearExportResult {
-  success: boolean;
-  issue_id?: string;
-  issue_identifier?: string;
-  issue_url?: string;
-  error?: string;
-  retry_recommended?: boolean;
+export interface PersonaProgressionAnalytics {
+  project_id: string;
+  total_sessions: number;
+  completion_rate: number;
+  average_session_duration: number;
+  most_used_specialists: Array<{
+    specialist: string;
+    usage_count: number;
+    success_rate: number;
+  }>;
+  progression_trends: Array<{
+    stage: string;
+    average_score: number;
+    completion_rate: number;
+  }>;
 }
-
-// Request/Response DTOs for export batches
-export interface CreateExportBatchRequest {
-  name: string;
-  description?: string;
-  requirement_ids: string[];
-  target_type: 'linear';
-  target_config: {
-    workspace_id?: string;
-    team_id: string;
-    project_id_linear?: string;
-    default_priority?: number;
-    default_labels?: string[];
-  };
-  retry_failed?: boolean;
-  max_retries?: number;
-}
-
-export interface ExportBatchWithItems extends ExportBatch {
-  items: ExportBatchItem[];
-}
-
-export interface ExportBatchSummary {
-  id: string;
-  name: string;
-  status: string;
-  total_items: number;
-  processed_items: number;
-  failed_items: number;
-  created_at: Date;
-  started_at?: Date;
-  completed_at?: Date;

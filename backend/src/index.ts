@@ -18,8 +18,7 @@ import linearRoutes from './routes/linear';
 import githubRepositoryRoutes from './routes/github-repositories';
 import jobRoutes from './routes/jobs';
 import contextSourceRoutes from './routes/context-sources';
-import exportRoutes from './routes/export';           // Linear export system
-import exportTrackingRoutes from './routes/exports';  // Export tracking system
+import personaProgressionRoutes from './routes/personaProgression';
 import { globalAIService } from './services/ai-provider';
 
 const app = express();
@@ -70,8 +69,29 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
-// Mount route modules
-app.use('/api/users', userRoutes);
+// Root endpoint (updated with new API endpoints)
+app.get('/', (req: Request, res: Response) => {
+  res.json({
+    message: 'Gastown Tester API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      auth: '/auth',
+      workspaces: '/api/workspaces',
+      projects: '/api/projects',
+      ai: '/api/ai',
+      requirements: '/api/requirements',
+      linear: '/api/linear',
+      githubRepositories: '/api/github-repositories',
+      jobs: '/api/jobs',
+      context_sources: '/api/context-sources',
+      personaProgression: '/api/persona-progression'
+    }
+  });
+});
+
+// API Routes
+app.use('/auth', authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/requirements', requirementRoutes);
@@ -82,8 +102,7 @@ app.use('/api/linear', linearRoutes);
 app.use('/api/github-repositories', githubRepositoryRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/context-sources', contextSourceRoutes);
-app.use('/api', exportRoutes);                    // Linear export system at /api/exports/*
-app.use('/api/export-tracking', exportTrackingRoutes);  // Export tracking at /api/export-tracking/*
+app.use('/api/persona-progression', personaProgressionRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -112,9 +131,91 @@ app.use((error: any, req: Request, res: Response, next: any) => {
   });
 });
 
-// Initialize AI service
-globalAIService.initialize().catch(error => {
-  appLogger.error('Failed to initialize AI service', { error: error.message });
+// Database initialization and server startup
+async function startServer() {
+  try {
+    appLogger.info('Starting Gastown Tester API...', { operation: 'server_startup' });
+
+    const dbAvailable = await isDatabaseAvailable();
+    if (dbAvailable) {
+      appLogger.info('Database connection established', { operation: 'database_connect' });
+
+      // Initialize database schema
+      try {
+        await initializeDatabase();
+        appLogger.info('Database schema ready', { operation: 'database_schema_init' });
+      } catch (error) {
+        appLogger.warn('Database schema initialization failed (normal for existing databases)', {
+          operation: 'database_schema_init',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    } else {
+      appLogger.warn('Database not available - API will start but database features will not work', {
+        operation: 'database_connect'
+      });
+      appLogger.warn('Make sure PostgreSQL is running and DATABASE_URL is configured');
+    }
+
+    // Initialize AI service
+    try {
+      await globalAIService.initialize();
+      appLogger.info('AI provider initialized successfully', { operation: 'ai_provider_init' });
+    } catch (error) {
+      appLogger.warn('AI provider initialization failed', {
+        operation: 'ai_provider_init',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      appLogger.warn('AI endpoints will not work properly. Check AI_PROVIDER_* environment variables.');
+    }
+
+    // Start Express server
+    const server = app.listen(PORT, () => {
+      appLogger.info('Gastown Tester API server started', {
+        operation: 'server_start',
+        port: PORT,
+        environment: process.env.NODE_ENV || 'development',
+        frontendUrl: process.env.FRONTEND_URL || 'http://localhost:4200',
+        endpoints: {
+          health: `http://localhost:${PORT}/health`,
+          auth: `http://localhost:${PORT}/auth`,
+          workspaces: `http://localhost:${PORT}/api/workspaces`,
+          projects: `http://localhost:${PORT}/api/projects`,
+          ai: `http://localhost:${PORT}/api/ai`,
+          requirements: `http://localhost:${PORT}/api/requirements`,
+          linear: `http://localhost:${PORT}/api/linear`,
+          githubRepositories: `http://localhost:${PORT}/api/github-repositories`,
+          jobs: `http://localhost:${PORT}/api/jobs`,
+          contextSources: `http://localhost:${PORT}/api/context-sources`,
+          personaProgression: `http://localhost:${PORT}/api/persona-progression`
+        }
+      });
+    });
+
+    return server;
+  } catch (error) {
+    appLogger.error('Failed to start server', {
+      operation: 'server_startup',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    process.exit(1);
+  }
+}
+
+// Start the server
+const server = startServer();
+
+// Graceful shutdown
+let serverInstance: any = null;
+
+server.then((srv) => {
+  serverInstance = srv;
+}).catch((error) => {
+  appLogger.error('Failed to start server', {
+    operation: 'server_startup',
+    error: error instanceof Error ? error.message : 'Unknown error'
+  });
+  process.exit(1);
 });
 
 app.listen(PORT, () => {
