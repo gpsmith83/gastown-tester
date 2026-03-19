@@ -3,22 +3,22 @@
   <header class="project-header">
     <div class="header-content">
       <div class="header-left">
-        <button class="back-btn" (click)="goBack()">
+        <button class="back-btn" (click)="navigateToWorkspace()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
           </svg>
-          Back to Workspaces
+          Back to Workspace
         </button>
       </div>
-      <div class="header-right" *ngIf="project && canEdit">
-        <button class="edit-btn" (click)="startEdit()" *ngIf="!isEditing">
+      <div class="header-right" *ngIf="project">
+        <button class="edit-btn" (click)="startEditing()" *ngIf="!isEditing">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
           </svg>
           Edit Project
         </button>
         <div class="edit-actions" *ngIf="isEditing">
-          <button class="cancel-btn" (click)="cancelEdit()">Cancel</button>
+          <button class="cancel-btn" (click)="cancelEditing()">Cancel</button>
           <button class="save-btn" (click)="saveProject()" [disabled]="!editForm.name?.trim()">Save Changes</button>
         </div>
       </div>
@@ -37,7 +37,7 @@
       <h3>Error Loading Project</h3>
       <p>{{error}}</p>
       <button class="retry-btn" (click)="loadProject()" *ngIf="projectId">Try Again</button>
-      <button class="back-btn-alt" (click)="goBack()">Back to Workspaces</button>
+      <button class="back-btn-alt" (click)="navigateToWorkspace()">Back to Workspace</button>
     </div>
   </div>
 
@@ -48,421 +48,319 @@
       <div class="project-title-section">
         <!-- View Mode -->
         <div *ngIf="!isEditing">
-          <div class="title-row">
-            <h1>{{project.name}}</h1>
-            <span class="project-status" [class]="project.status">{{project.status}}</span>
-          </div>
+          <h1 class="project-title">{{project.name}}</h1>
           <p class="project-description" *ngIf="project.description">{{project.description}}</p>
+          <p class="no-description" *ngIf="!project.description">No description provided.</p>
         </div>
 
         <!-- Edit Mode -->
-        <div class="edit-section" *ngIf="isEditing">
+        <div *ngIf="isEditing" class="edit-form">
           <div class="form-group">
-            <label for="project-name">Project Name *</label>
+            <label for="name">Project Name</label>
             <input
-              id="project-name"
               type="text"
+              id="name"
+              class="form-input"
               [(ngModel)]="editForm.name"
               placeholder="Enter project name"
-              required
-              maxlength="255"
-            >
+              required>
           </div>
+
           <div class="form-group">
-            <label for="project-description">Description</label>
+            <label for="description">Description</label>
             <textarea
-              id="project-description"
+              id="description"
+              class="form-textarea"
               [(ngModel)]="editForm.description"
-              placeholder="Enter project description"
-              rows="3"
-            ></textarea>
+              placeholder="Describe your project"
+              rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="product-area">Product Area</label>
+            <input
+              type="text"
+              id="product-area"
+              class="form-input"
+              [(ngModel)]="editForm.product_area"
+              placeholder="e.g., Authentication, Dashboard">
+          </div>
+
+          <div class="form-group">
+            <label>Goals</label>
+            <div class="dynamic-list">
+              <div class="list-items">
+                <div *ngFor="let goal of editForm.goals; let i = index" class="list-item">
+                  <span>{{goal}}</span>
+                  <button type="button" class="remove-btn" (click)="removeGoal(i)">&times;</button>
+                </div>
+              </div>
+              <div class="add-item">
+                <input
+                  type="text"
+                  [(ngModel)]="goalInput"
+                  placeholder="Add a goal"
+                  (keyup.enter)="addGoal()"
+                  class="form-input">
+                <button type="button" (click)="addGoal()" class="add-btn">Add</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Default Labels</label>
+            <div class="dynamic-list">
+              <div class="list-items">
+                <div *ngFor="let label of editForm.default_labels; let i = index" class="list-item">
+                  <span>{{label}}</span>
+                  <button type="button" class="remove-btn" (click)="removeLabel(i)">&times;</button>
+                </div>
+              </div>
+              <div class="add-item">
+                <input
+                  type="text"
+                  [(ngModel)]="labelInput"
+                  placeholder="Add a label"
+                  (keyup.enter)="addLabel()"
+                  class="form-input">
+                <button type="button" (click)="addLabel()" class="add-btn">Add</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Project Metadata -->
-      <div class="project-metadata">
+      <div class="project-metadata" *ngIf="!isEditing">
         <div class="metadata-grid">
-          <!-- Workspace -->
-          <div class="metadata-item">
-            <label>Workspace</label>
-            <div class="metadata-value">{{project.workspace?.name}}</div>
-          </div>
-
-          <!-- Owner -->
-          <div class="metadata-item">
-            <label>Project Owner</label>
-            <div class="metadata-value owner">
-              <img [src]="project.owner?.avatar_url" [alt]="project.owner?.username" class="owner-avatar" *ngIf="project.owner?.avatar_url">
-              <span>{{project.owner?.name || project.owner?.username}}</span>
-            </div>
-          </div>
-
-          <!-- Product Area -->
-          <div class="metadata-item">
+          <div class="metadata-item" *ngIf="project.product_area">
             <label>Product Area</label>
-            <div class="metadata-value" *ngIf="!isEditing">
-              <span *ngIf="project.product_area; else noProductArea" class="product-area-badge">{{project.product_area}}</span>
-              <ng-template #noProductArea><span class="empty-value">Not specified</span></ng-template>
-            </div>
-            <div class="edit-field" *ngIf="isEditing">
-              <input
-                type="text"
-                [(ngModel)]="editForm.product_area"
-                placeholder="e.g., Mobile, Web, API"
-                class="small-input"
-              >
-            </div>
+            <span>{{project.product_area}}</span>
           </div>
-
-          <!-- Created Date -->
-          <div class="metadata-item">
-            <label>Created</label>
-            <div class="metadata-value">{{project.created_at | date:'MMM d, y \'at\' h:mm a'}}</div>
+          <div class="metadata-item" *ngIf="project.status">
+            <label>Status</label>
+            <span class="status-badge" [class]="getStatusClass(project.status)">{{project.status | titlecase}}</span>
           </div>
-
-          <!-- Last Updated -->
-          <div class="metadata-item" *ngIf="project.updated_at !== project.created_at">
-            <label>Last Updated</label>
-            <div class="metadata-value">{{project.updated_at | date:'MMM d, y \'at\' h:mm a'}}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Project Details Sections -->
-    <div class="project-details">
-      <!-- Goals Section -->
-      <div class="detail-section">
-        <h2>Project Goals</h2>
-        <div class="section-content">
-          <!-- View Mode -->
-          <div *ngIf="!isEditing">
-            <div *ngIf="project.goals && project.goals.length > 0; else noGoals">
-              <ul class="goals-list">
-                <li *ngFor="let goal of project.goals" class="goal-item">{{goal}}</li>
-              </ul>
-            </div>
-            <ng-template #noGoals>
-              <p class="empty-message">No goals defined for this project.</p>
-            </ng-template>
-          </div>
-
-          <!-- Edit Mode -->
-          <div class="goals-editor" *ngIf="isEditing">
-            <div class="dynamic-list">
-              <div class="list-input">
-                <input
-                  type="text"
-                  [(ngModel)]="goalInput"
-                  placeholder="Add a project goal"
-                  (keyup.enter)="addGoal()"
-                >
-                <button type="button" (click)="addGoal()" [disabled]="!goalInput.trim()">Add</button>
-              </div>
-              <div class="list-items" *ngIf="editForm.goals && editForm.goals.length > 0">
-                <div class="list-item" *ngFor="let goal of editForm.goals; let i = index">
-                  <span>{{goal}}</span>
-                  <button type="button" class="remove-btn" (click)="removeGoal(i)">×</button>
-                </div>
-              </div>
+          <div class="metadata-item" *ngIf="project.goals && project.goals.length > 0">
+            <label>Goals</label>
+            <div class="goals-list">
+              <span *ngFor="let goal of project.goals" class="goal-item">{{goal}}</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Default Labels Section -->
-      <div class="detail-section">
-        <h2>Default Labels</h2>
-        <div class="section-content">
-          <!-- View Mode -->
-          <div *ngIf="!isEditing">
-            <div *ngIf="project.default_labels && project.default_labels.length > 0; else noLabels">
-              <div class="labels-list">
-                <span *ngFor="let label of project.default_labels" class="label-badge">{{label}}</span>
-              </div>
-            </div>
-            <ng-template #noLabels>
-              <p class="empty-message">No default labels defined.</p>
-            </ng-template>
-          </div>
-
-          <!-- Edit Mode -->
-          <div class="labels-editor" *ngIf="isEditing">
-            <div class="dynamic-list">
-              <div class="list-input">
-                <input
-                  type="text"
-                  [(ngModel)]="labelInput"
-                  placeholder="Add a default label"
-                  (keyup.enter)="addLabel()"
-                >
-                <button type="button" (click)="addLabel()" [disabled]="!labelInput.trim()">Add</button>
-              </div>
-              <div class="list-items" *ngIf="editForm.default_labels && editForm.default_labels.length > 0">
-                <div class="list-item label" *ngFor="let label of editForm.default_labels; let i = index">
-                  <span>{{label}}</span>
-                  <button type="button" class="remove-btn" (click)="removeLabel(i)">×</button>
-                </div>
-              </div>
+          <div class="metadata-item" *ngIf="project.default_labels && project.default_labels.length > 0">
+            <label>Default Labels</label>
+            <div class="labels-list">
+              <span *ngFor="let label of project.default_labels" class="label-item">{{label}}</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Requirements Dashboard -->
-    <div class="detail-section requirements-dashboard">
-      <div class="requirements-header">
+    <!-- Requirements Section -->
+    <div class="detail-section requirements-section">
+      <div class="section-header">
         <h2>Requirements</h2>
-        <div class="requirements-summary" *ngIf="projectRequirements">
-          <span class="total-count">{{projectRequirements.length}} Total</span>
-          <span class="status-breakdown" *ngIf="projectRequirements.length > 0">
-            <span class="status-count active" *ngIf="getRequirementCountByStatus('active') > 0">
-              {{getRequirementCountByStatus('active')}} Active
-            </span>
-            <span class="status-count draft" *ngIf="getRequirementCountByStatus('draft') > 0">
-              {{getRequirementCountByStatus('draft')}} Draft
-            </span>
-            <span class="status-count completed" *ngIf="getRequirementCountByStatus('completed') > 0">
-              {{getRequirementCountByStatus('completed')}} Completed
-            </span>
-          </span>
-        </div>
-      </div>
-
-      <!-- Loading requirements -->
-      <div class="requirements-loading" *ngIf="loadingRequirements">
-        <div class="loading-spinner small"></div>
-        <p>Loading requirements...</p>
-      </div>
-
-      <!-- Requirements list -->
-      <div class="requirements-list" *ngIf="projectRequirements && projectRequirements.length > 0 && !loadingRequirements">
-        <div
-          class="requirement-card"
-          *ngFor="let requirement of projectRequirements; trackBy: trackRequirement"
-          (click)="navigateToRequirement(requirement.id)"
-        >
-          <div class="requirement-main">
-            <div class="requirement-title">{{requirement.title}}</div>
-            <div class="requirement-description" *ngIf="requirement.description">
-              {{requirement.description}}
-            </div>
-            <div class="requirement-meta">
-              <span class="requirement-status" [class]="requirement.status">
-                {{requirement.status | titlecase}}
-              </span>
-              <span class="requirement-type" [class]="requirement.type">
-                {{requirement.type | titlecase}}
-              </span>
-              <span class="requirement-priority" [class]="'priority-' + requirement.priority">
-                P{{requirement.priority}}
-              </span>
-              <span class="requirement-author">
-                <img
-                  [src]="requirement.author?.avatar_url"
-                  [alt]="requirement.author?.username"
-                  class="author-avatar"
-                  *ngIf="requirement.author?.avatar_url"
-                >
-                by {{requirement.author?.name || requirement.author?.username}}
-              </span>
-            </div>
-          </div>
-          <div class="requirement-sidebar">
-            <div class="requirement-dates">
-              <div class="date-info">
-                <label>Updated</label>
-                <span>{{requirement.updated_at | date:'MMM d, y'}}</span>
-              </div>
-              <div class="date-info" *ngIf="requirement.created_at !== requirement.updated_at">
-                <label>Created</label>
-                <span>{{requirement.created_at | date:'MMM d, y'}}</span>
-              </div>
-            </div>
-            <div class="requirement-actions">
-              <button class="view-btn" (click)="navigateToRequirement(requirement.id); $event.stopPropagation()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                </svg>
-                View
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Empty state -->
-      <div class="requirements-empty" *ngIf="!loadingRequirements && (!projectRequirements || projectRequirements.length === 0)">
-        <div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14,2 14,8 20,8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10,9 9,9 8,9"/>
-          </svg>
-          <h3>No Requirements Yet</h3>
-          <p>This project doesn't have any requirements defined yet. Requirements help define what needs to be built and track progress.</p>
-          <button class="create-first-btn" (click)="createFirstRequirement()">
-            Create First Requirement
+        <div class="section-actions">
+          <button class="btn btn-primary" (click)="openRequirementForm()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            </svg>
+            Quick Add
+          </button>
+          <button class="btn btn-secondary" (click)="openCreateRequirementModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            </svg>
+            New Requirement
           </button>
         </div>
       </div>
 
-      <!-- Error loading requirements -->
-      <div class="requirements-error" *ngIf="requirementError && !loadingRequirements">
-        <div class="error-state">
-          <p>{{requirementError}}</p>
-          <button class="retry-btn" (click)="loadRequirements()">Try Again</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Project Actions -->
-    <div class="project-actions" *ngIf="canEdit && !isEditing">
-      <div class="actions-section">
-        <h3>Project Actions</h3>
-        <div class="action-buttons">
-          <div class="status-actions">
-            <label>Change Status:</label>
-            <button
-              class="status-btn active"
-              (click)="updateStatus('active')"
-              [disabled]="project.status === 'active'"
-            >
-              Activate
-            </button>
-            <button
-              class="status-btn draft"
-              (click)="updateStatus('draft')"
-              [disabled]="project.status === 'draft'"
-            >
-              Draft
-            </button>
-            <button
-              class="status-btn archived"
-              (click)="updateStatus('archived')"
-              [disabled]="project.status === 'archived'"
-            >
-              Archive
+      <!-- Quick Add Form -->
+      <div class="quick-add-form" *ngIf="showRequirementForm">
+        <div class="form-card">
+          <h3>Quick Add Requirement</h3>
+          <div class="form-group">
+            <label for="requirement-prompt">What do you need?</label>
+            <input
+              type="text"
+              id="requirement-prompt"
+              class="form-input"
+              [(ngModel)]="requirementForm.prompt"
+              placeholder="Describe what you need in a few words..."
+              [disabled]="isCreatingRequirement">
+          </div>
+          <div class="form-group">
+            <label for="context-notes">Additional Context (Optional)</label>
+            <textarea
+              id="context-notes"
+              class="form-textarea"
+              [(ngModel)]="requirementForm.contextNotes"
+              placeholder="Any additional context or requirements..."
+              rows="3"
+              [disabled]="isCreatingRequirement"></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-secondary" (click)="closeRequirementForm()" [disabled]="isCreatingRequirement">Cancel</button>
+            <button class="btn btn-primary" (click)="createRequirementFromForm()" [disabled]="!requirementForm.prompt.trim() || isCreatingRequirement">
+              {{isCreatingRequirement ? 'Creating...' : 'Create Requirement'}}
             </button>
           </div>
-          <div class="danger-actions">
-            <button class="delete-btn" (click)="deleteProject()">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-              </svg>
-              Delete Project
-            </button>
+          <div class="error-message" *ngIf="requirementError">{{requirementError}}</div>
+        </div>
+      </div>
+
+      <!-- Requirements Loading -->
+      <div class="loading-container" *ngIf="loadingRequirements">
+        <div class="loading-spinner small"></div>
+        <p>Loading requirements...</p>
+      </div>
+
+      <!-- Requirements Error -->
+      <div class="error-message" *ngIf="requirementError && !loadingRequirements">
+        {{requirementError}}
+        <button class="retry-btn" (click)="loadProjectRequirements()">Retry</button>
+      </div>
+
+      <!-- Requirements List -->
+      <div class="requirements-list" *ngIf="!loadingRequirements && !requirementError">
+        <div class="requirements-summary" *ngIf="projectRequirements.length > 0">
+          <span class="total-count">{{projectRequirements.length}} Total Requirements</span>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="projectRequirements.length === 0">
+          <div class="empty-icon">📋</div>
+          <h3>No Requirements Yet</h3>
+          <p>Get started by creating your first requirement for this project.</p>
+          <button class="btn btn-primary" (click)="openRequirementForm()">Create First Requirement</button>
+        </div>
+
+        <!-- Requirements Grid -->
+        <div class="requirements-grid" *ngIf="projectRequirements.length > 0">
+          <div *ngFor="let requirement of projectRequirements" class="requirement-card" (click)="navigateToRequirement(requirement.id)">
+            <div class="requirement-header">
+              <h4 class="requirement-title">{{requirement.title}}</h4>
+              <div class="requirement-badges">
+                <span class="badge priority-{{requirement.priority}}">{{getPriorityLabel(requirement.priority)}}</span>
+                <span class="badge" [class]="getStatusClass(requirement.status)">{{requirement.status | titlecase}}</span>
+                <span class="badge" [class]="getTypeClass(requirement.type)">{{requirement.type | titlecase}}</span>
+              </div>
+            </div>
+            <p class="requirement-description" *ngIf="requirement.description">{{requirement.description}}</p>
+            <div class="requirement-meta">
+              <span class="meta-item">Created {{requirement.created_at | date:'short'}}</span>
+              <span class="meta-item" *ngIf="requirement.author">by {{requirement.author.name || requirement.author.username}}</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </main>
+</div>
 
-  <!-- Create Requirement Modal -->
-  <div class="modal-overlay" *ngIf="showCreateRequirementModal" (click)="closeCreateRequirementModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Create New Requirement</h2>
-        <button class="close-btn" (click)="closeCreateRequirementModal()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-          </svg>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <!-- Error display -->
-        <div class="error-message" *ngIf="createRequirementError">
-          {{createRequirementError}}
+<!-- Create Requirement Modal -->
+<div class="modal-overlay" *ngIf="showCreateRequirementModal" (click)="closeCreateRequirementModal()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Create New Requirement</h3>
+      <button class="close-btn" (click)="closeCreateRequirementModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form class="requirement-form">
+        <div class="form-group">
+          <label for="req-title">Title *</label>
+          <input
+            type="text"
+            id="req-title"
+            class="form-input"
+            [(ngModel)]="createRequirementForm.title"
+            name="title"
+            placeholder="What needs to be done?"
+            [disabled]="creatingRequirement"
+            required>
         </div>
 
-        <form (ngSubmit)="submitCreateRequirement()" #createForm="ngForm">
-          <!-- Title field -->
+        <div class="form-group">
+          <label for="req-description">Description</label>
+          <textarea
+            id="req-description"
+            class="form-textarea"
+            [(ngModel)]="createRequirementForm.description"
+            name="description"
+            placeholder="Provide details about this requirement..."
+            rows="4"
+            [disabled]="creatingRequirement"></textarea>
+        </div>
+
+        <div class="form-row">
           <div class="form-group">
-            <label for="req-title">Title <span class="required">*</span></label>
-            <input
-              id="req-title"
-              type="text"
-              [(ngModel)]="createRequirementForm.title"
-              name="title"
-              placeholder="Enter requirement title"
-              required
-              maxlength="255"
-              [disabled]="creatingRequirement"
-            >
+            <label for="req-priority">Priority</label>
+            <select
+              id="req-priority"
+              class="form-select"
+              [(ngModel)]="createRequirementForm.priority"
+              name="priority"
+              [disabled]="creatingRequirement">
+              <option value="1">Critical</option>
+              <option value="2">High</option>
+              <option value="3">Medium</option>
+              <option value="4">Low</option>
+              <option value="5">Minor</option>
+            </select>
           </div>
 
-          <!-- Description field -->
-          <div class="form-group">
-            <label for="req-description">Description</label>
-            <textarea
-              id="req-description"
-              [(ngModel)]="createRequirementForm.description"
-              name="description"
-              placeholder="Enter requirement description (optional)"
-              rows="4"
-              [disabled]="creatingRequirement"
-            ></textarea>
-          </div>
-
-          <!-- Type field -->
           <div class="form-group">
             <label for="req-type">Type</label>
             <select
               id="req-type"
+              class="form-select"
               [(ngModel)]="createRequirementForm.type"
               name="type"
-              [disabled]="creatingRequirement"
-            >
+              [disabled]="creatingRequirement">
               <option value="feature">Feature</option>
               <option value="bug">Bug</option>
               <option value="enhancement">Enhancement</option>
               <option value="epic">Epic</option>
             </select>
           </div>
+        </div>
 
-          <!-- Priority field -->
-          <div class="form-group">
-            <label for="req-priority">Priority</label>
-            <select
-              id="req-priority"
-              [(ngModel)]="createRequirementForm.priority"
-              name="priority"
-              [disabled]="creatingRequirement"
-            >
-              <option value="1">1 - Highest</option>
-              <option value="2">2 - High</option>
-              <option value="3">3 - Medium</option>
-              <option value="4">4 - Low</option>
-              <option value="5">5 - Lowest</option>
-            </select>
-          </div>
+        <div class="form-group">
+          <label for="req-github-issue">GitHub Issue Number</label>
+          <input
+            type="number"
+            id="req-github-issue"
+            class="form-input"
+            [(ngModel)]="createRequirementForm.github_issue_number"
+            name="github_issue_number"
+            placeholder="e.g., 123"
+            [disabled]="creatingRequirement">
+        </div>
 
-          <!-- Form actions -->
-          <div class="modal-actions">
-            <button
-              type="button"
-              class="cancel-btn"
-              (click)="closeCreateRequirementModal()"
-              [disabled]="creatingRequirement"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="create-btn"
-              [disabled]="!createRequirementForm.title.trim() || creatingRequirement"
-            >
-              <span *ngIf="creatingRequirement">Creating...</span>
-              <span *ngIf="!creatingRequirement">Create Requirement</span>
-            </button>
-          </div>
-        </form>
+        <div class="form-group">
+          <label for="req-github-url">GitHub Issue URL</label>
+          <input
+            type="url"
+            id="req-github-url"
+            class="form-input"
+            [(ngModel)]="createRequirementForm.github_issue_url"
+            name="github_issue_url"
+            placeholder="https://github.com/owner/repo/issues/123"
+            [disabled]="creatingRequirement">
+        </div>
+      </form>
+
+      <div class="error-message" *ngIf="createRequirementError">
+        {{createRequirementError}}
       </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeCreateRequirementModal()" [disabled]="creatingRequirement">Cancel</button>
+      <button class="btn btn-primary" (click)="createRequirement()" [disabled]="!createRequirementForm.title.trim() || creatingRequirement">
+        {{creatingRequirement ? 'Creating...' : 'Create Requirement'}}
+      </button>
     </div>
   </div>
 </div>

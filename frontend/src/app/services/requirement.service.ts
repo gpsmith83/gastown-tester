@@ -110,6 +110,20 @@ export class RequirementService {
   }
 
   /**
+   * Update requirement status
+   */
+  updateRequirementStatus(id: string, status: 'draft' | 'active' | 'completed' | 'archived'): Observable<Requirement> {
+    return this.http.patch<{ requirement: Requirement }>(`${this.API_BASE}/${id}/status`, { status }, { withCredentials: true })
+      .pipe(
+        map(response => response.requirement),
+        catchError(error => {
+          console.error('Failed to update requirement status:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
    * Delete a requirement
    */
   deleteRequirement(id: string): Observable<boolean> {
@@ -145,4 +159,29 @@ export class RequirementService {
         })
       );
   }
+
+  /**
+   * Helper method to create requirement from form data
+   */
+  createRequirementFromForm(projectId: string, formData: { prompt: string; contextNotes?: string }): Observable<RequirementWithDetails> {
+    const createRequest: CreateRequirementRequest = {
+      title: formData.prompt,
+      description: formData.contextNotes,
+      project_id: projectId,
+      priority: 3, // Default medium priority
+      type: 'feature' // Default to feature type
+    };
+
+    return this.createRequirement(createRequest);
+  }
+
+  /**
+   * Clear the requirements cache (useful for component cleanup)
+   */
+  clearRequirements(): void {
+    this._requirements.next([]);
+  }
+
+  // Alias methods for backward compatibility
+  getRequirements = this.getAllRequirements;
 }
