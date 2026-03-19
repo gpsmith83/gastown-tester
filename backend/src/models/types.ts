@@ -364,6 +364,7 @@ export interface UpdateContextSelectionRequest {
   }[];
 }
 
+<<<<<<< HEAD
 // AI Provider Audit interfaces (B-706)
 export interface AIProviderAudit {
   id: string;
@@ -1024,13 +1025,59 @@ export interface PersonaRuleAction {
   delay_seconds?: number; // Optional delay before executing action
 }
 
-export interface PersonaProgressionConfig {
+// Persona Orchestration types for default progression (B-302)
+export interface PersonaType {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  capabilities: string[];
+}
+
+export interface RequirementReadinessState {
+  requirement_id: string;
+  overall_readiness: 'not_started' | 'initial' | 'developing' | 'ready' | 'completed';
+  readiness_dimensions: ReadinessDimension[];
+  gaps_identified: ReadinessGap[];
+  last_assessed_at: Date;
+}
+
+export interface ReadinessDimension {
+  dimension_name: string;
+  dimension_category: 'scope' | 'acceptance_criteria' | 'technical_clarity' | 'dependencies' | 'user_impact';
+  current_state: 'missing' | 'draft' | 'partial' | 'complete';
+  confidence_score: number; // 0-100
+  last_contributed_by?: string; // persona that last contributed
+  contribution_timestamp?: Date;
+}
+
+export interface ReadinessGap {
+  gap_type: string;
+  gap_description: string;
+  suggested_persona_types: string[];
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  estimated_effort: 'small' | 'medium' | 'large';
+}
+
+// Orchestration configuration (for rule-based automation)
+export interface PersonaOrchestrationConfig {
   id: string;
   progression_name: string;
   description?: string;
   default_sequence: string[]; // Array of persona types in order
   rules: PersonaOrchestrationRule[];
   is_default: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Progression configuration (for recommendations)
+export interface PersonaProgressionConfig {
+  id: string;
+  name: string;
+  description?: string;
+  is_default: boolean;
+  progression_rules: PersonaProgressionRule[];
   created_at: Date;
   updated_at: Date;
 }
@@ -1079,7 +1126,7 @@ export interface UpdateOrchestrationRuleRequest {
   is_active?: boolean;
 }
 
-export interface CreateProgressionConfigRequest {
+export interface CreateOrchestrationConfigRequest {
   progression_name: string;
   description?: string;
   default_sequence: string[];
@@ -1091,4 +1138,65 @@ export interface TriggerOrchestrationRequest {
   trigger_data?: any;
   requirement_id?: string;
   session_id?: string;
+}
+
+export interface PersonaProgressionRule {
+  rule_name: string;
+  condition: {
+    readiness_state?: string;
+    missing_dimensions?: string[];
+    gap_types?: string[];
+    priority_threshold?: string;
+  };
+  recommended_persona: {
+    persona_type: string;
+    persona_name?: string;
+    invocation_reason: string;
+    expected_contributions: string[];
+  };
+  priority: number; // 1=highest priority rule
+}
+
+export interface PersonaRecommendation {
+  requirement_id: string;
+  session_id?: string;
+  recommended_persona: {
+    persona_type: string;
+    persona_name: string;
+    invocation_reason: string;
+    expected_contributions: string[];
+    confidence_score: number; // 0-100
+  };
+  readiness_analysis: {
+    current_state: RequirementReadinessState;
+    primary_gaps: ReadinessGap[];
+    progression_rationale: string;
+  };
+  alternative_personas?: {
+    persona_type: string;
+    persona_name: string;
+    reason: string;
+    confidence_score: number;
+  }[];
+  generated_at: Date;
+}
+
+// Request/Response DTOs for recommendations
+export interface GetPersonaRecommendationRequest {
+  requirement_id: string;
+  session_id?: string;
+  current_context?: any;
+}
+
+export interface PersonaRecommendationResponse {
+  recommendation: PersonaRecommendation | null;
+  fallback_reason?: string;
+  error?: string;
+}
+
+export interface CreateProgressionConfigRequest {
+  name: string;
+  description?: string;
+  progression_rules: PersonaProgressionRule[];
+  is_default?: boolean;
 }

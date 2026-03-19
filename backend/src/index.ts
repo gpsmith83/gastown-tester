@@ -29,6 +29,7 @@ import monitoringRoutes from './routes/monitoring';
 import personaProgressionRoutes from './routes/personaProgression';
 import { exportsRouter } from './routes/exports';
 import personaOrchestrationRoutes from './routes/persona-orchestration';
+import personaRecommendationRoutes from './routes/persona-recommendations';
 import { globalAIService } from './services/ai-provider';
 import { performanceMonitoringMiddleware } from './middleware/performanceMonitoring';
 import { globalRetryProcessor } from './services/RetryProcessor';
@@ -148,7 +149,8 @@ app.get('/', (req: Request, res: Response) => {
       monitoring: '/api/monitoring',
       personaProgression: '/api/persona-progression',
       exports: '/api/exports',
-      'persona-orchestration': '/api/persona-orchestration'
+      'persona-orchestration': '/api/persona-orchestration',
+      personaRecommendations: '/api/persona-recommendations'
     }
   });
 });
@@ -171,6 +173,7 @@ app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/persona-progression', personaProgressionRoutes);
 app.use('/api/exports', exportsRouter);
 app.use('/api/persona-orchestration', personaOrchestrationRoutes);
+app.use('/api/persona-recommendations', personaRecommendationRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
