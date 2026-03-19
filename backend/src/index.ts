@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -36,10 +36,25 @@ import { globalAIService } from './services/ai-provider';
 import { performanceMonitoringMiddleware } from './middleware/performanceMonitoring';
 import { globalRetryProcessor } from './services/RetryProcessor';
 
+// Import security middleware
+import {
+  generalRateLimit,
+  authRateLimit,
+  sanitizeInput,
+  requestSizeLimit,
+  securityLogging,
+  validateTenantIsolation
+} from './middleware/security';
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Rate limiting
+// Enhanced security logging
+app.use(securityLogging);
+
+// Rate limiting with enhanced controls
+app.use(generalRateLimit);
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000 // limit each IP to 1000 requests per windowMs
@@ -109,13 +124,20 @@ app.use(correlationMiddleware);
 // Performance monitoring middleware (must be after correlation middleware)
 app.use(performanceMonitoringMiddleware);
 
-// JSON parsing middleware
+// JSON parsing middleware with enhanced security
+app.use(requestSizeLimit(1024 * 1024 * 10)); // 10MB limit
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging middleware
-app.use((req: Request, res: Response, next) => {
-  apiLogger.info('Request received', {
+// Input sanitization and validation
+app.use(sanitizeInput);
+app.use(validateTenantIsolation);
+
+// Enhanced request logging middleware with correlation tracking
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const logger = apiLogger.withRequest(req);
+  logger.info(`${req.method} ${req.path}`, {
+    operation: 'request_received',
     method: req.method,
     url: req.url,
     userAgent: req.get('User-Agent'),
@@ -161,8 +183,8 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
-// API Routes
-app.use('/auth', authRoutes);
+// API Routes with enhanced rate limiting for auth endpoints
+app.use('/auth', authRateLimit, authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/ai', aiRoutes);
@@ -203,8 +225,8 @@ app.use((error: any, req: Request, res: Response, next: any) => {
 
   res.status(500).json({
     error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'production' 
-      ? 'Something went wrong' 
+    message: process.env.NODE_ENV === 'production'
+      ? 'Something went wrong'
       : error.message,
     timestamp: new Date().toISOString()
   });
@@ -261,19 +283,6 @@ async function startServer() {
       }
     }
 
-    // Initialize export retry processor if database is available
-    if (dbAvailable) {
-      try {
-        globalRetryProcessor.start(60000); // Check every minute
-        appLogger.info('Export retry processor started', { operation: 'retry_processor_init' });
-      } catch (error) {
-        appLogger.warn('Export retry processor initialization failed', {
-          operation: 'retry_processor_init',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
-    }
-
     // Start Express server
     const server = app.listen(PORT, () => {
       appLogger.info('Gastown Tester API server started', {
@@ -303,6 +312,7 @@ async function startServer() {
       console.log('🚀 Gastown Tester API server running on port', PORT);
       console.log('📊 AI Audit API:', `http://localhost:${PORT}/api/ai/audit`);
       console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
+      console.log('🔐 Enhanced security middleware active');
     });
 
     return server;
