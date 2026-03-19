@@ -26,8 +26,10 @@ import jobRoutes from './routes/jobs';
 import contextSourceRoutes from './routes/context-sources';
 import monitoringRoutes from './routes/monitoring';
 import personaProgressionRoutes from './routes/personaProgression';
+import { exportsRouter } from './routes/exports';
 import { globalAIService } from './services/ai-provider';
 import { performanceMonitoringMiddleware } from './middleware/performanceMonitoring';
+import { globalRetryProcessor } from './services/RetryProcessor';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -141,7 +143,8 @@ app.get('/', (req: Request, res: Response) => {
       jobs: '/api/jobs',
       context_sources: '/api/context-sources',
       monitoring: '/api/monitoring',
-      personaProgression: '/api/persona-progression'
+      personaProgression: '/api/persona-progression',
+      exports: '/api/exports'
     }
   });
 });
@@ -161,6 +164,7 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/context-sources', contextSourceRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/persona-progression', personaProgressionRoutes);
+app.use('/api/exports', exportsRouter);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -227,6 +231,32 @@ async function startServer() {
       appLogger.warn('AI endpoints will not work properly. Check AI_PROVIDER_* environment variables.');
     }
 
+    // Initialize export retry processor if database is available
+    if (dbAvailable) {
+      try {
+        globalRetryProcessor.start(60000); // Check every minute
+        appLogger.info('Export retry processor started', { operation: 'retry_processor_init' });
+      } catch (error) {
+        appLogger.warn('Export retry processor initialization failed', {
+          operation: 'retry_processor_init',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
+    // Initialize export retry processor if database is available
+    if (dbAvailable) {
+      try {
+        globalRetryProcessor.start(60000); // Check every minute
+        appLogger.info('Export retry processor started', { operation: 'retry_processor_init' });
+      } catch (error) {
+        appLogger.warn('Export retry processor initialization failed', {
+          operation: 'retry_processor_init',
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
     // Start Express server
     const server = app.listen(PORT, () => {
       appLogger.info('Gastown Tester API server started', {
@@ -245,7 +275,8 @@ async function startServer() {
           githubRepositories: `http://localhost:${PORT}/api/github-repositories`,
           jobs: `http://localhost:${PORT}/api/jobs`,
           contextSources: `http://localhost:${PORT}/api/context-sources`,
-          personaProgression: `http://localhost:${PORT}/api/persona-progression`
+          personaProgression: `http://localhost:${PORT}/api/persona-progression`,
+          exports: `http://localhost:${PORT}/api/exports`
         }
       });
     });
@@ -274,6 +305,32 @@ server.then((srv) => {
     error: error instanceof Error ? error.message : 'Unknown error'
   });
   process.exit(1);
+});
+
+process.on('SIGTERM', () => {
+  appLogger.info('SIGTERM received, shutting down gracefully', { operation: 'server_shutdown' });
+  globalRetryProcessor.stop();
+  if (serverInstance) {
+    serverInstance.close(() => {
+      appLogger.info('Process terminated', { operation: 'server_shutdown' });
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
+});
+
+process.on('SIGINT', () => {
+  appLogger.info('SIGINT received, shutting down gracefully', { operation: 'server_shutdown' });
+  globalRetryProcessor.stop();
+  if (serverInstance) {
+    serverInstance.close(() => {
+      appLogger.info('Process terminated', { operation: 'server_shutdown' });
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
 });
 
 export default app;

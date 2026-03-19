@@ -341,6 +341,7 @@ export class RequirementModel {
     return (result.rowCount ?? 0) > 0;
   }
 
+<<<<<<< HEAD
   // Advanced workflow methods for B-404, B-405, B-406, B-407
 
   // Get requirement with full workflow details
@@ -760,4 +761,57 @@ export class RequirementModel {
 
     return (result.rowCount ?? 0) > 0;
   }
+=======
+  // Get multiple requirements by IDs (for export batches)
+  static async findByIds(ids: string[]): Promise<Requirement[]> {
+    if (ids.length === 0) return [];
+
+    const placeholders = ids.map((_, index) => `$${index + 1}`).join(',');
+    const result = await db.query(
+      `SELECT * FROM requirements
+       WHERE id IN (${placeholders}) AND is_active = true
+       ORDER BY priority ASC, updated_at DESC`,
+      ids
+    );
+
+    return result.rows;
+  }
+
+  // Get requirements by project with filters (for export batches)
+  static async findByProjectIdFiltered(
+    project_id: string,
+    filters?: {
+      status?: 'draft' | 'active' | 'completed' | 'archived';
+      is_active?: boolean;
+      type?: 'feature' | 'bug' | 'enhancement' | 'epic';
+    }
+  ): Promise<Requirement[]> {
+    let query = `
+      SELECT * FROM requirements
+      WHERE project_id = $1
+    `;
+    const values: any[] = [project_id];
+    let paramIndex = 2;
+
+    if (filters) {
+      if (filters.status) {
+        query += ` AND status = $${paramIndex++}`;
+        values.push(filters.status);
+      }
+      if (filters.is_active !== undefined) {
+        query += ` AND is_active = $${paramIndex++}`;
+        values.push(filters.is_active);
+      }
+      if (filters.type) {
+        query += ` AND type = $${paramIndex++}`;
+        values.push(filters.type);
+      }
+    }
+
+    query += ' ORDER BY priority ASC, updated_at DESC';
+
+    const result = await db.query(query, values);
+    return result.rows;
+  }
+>>>>>>> check-fury-w8a
 }

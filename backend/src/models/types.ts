@@ -364,7 +364,6 @@ export interface UpdateContextSelectionRequest {
   }[];
 }
 
-<<<<<<< HEAD
 // Persona progression types (B-302)
 export interface PersonaProgressionHistory {
   id: string;
@@ -398,6 +397,70 @@ export interface PersonaProgressionHistory {
   updated_at: Date;
 }
 
+// Export batch system types (B-503, B-505, B-506)
+export interface ExportBatch {
+  id: string;
+  project_id: string;
+
+  // Batch metadata
+  type: 'github_issues' | 'linear_issues';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'retrying';
+
+  // Export configuration
+  target_service: 'github' | 'linear';
+  target_config: Record<string, any>; // service-specific config
+
+  // Progress tracking
+  total_items: number;
+  processed_items: number;
+  failed_items: number;
+
+  // Retry configuration
+  max_retries: number;
+  retry_count: number;
+  retry_delay_seconds: number;
+
+  // Result tracking
+  results: Record<string, any>; // stores export results and errors
+  error_message?: string;
+
+  // Timing
+  started_at?: Date;
+  completed_at?: Date;
+  next_retry_at?: Date;
+
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ExportBatchItem {
+  id: string;
+  batch_id: string;
+
+  // Source item reference
+  source_type: 'requirement';
+  source_id: string;
+
+  // Export status
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'skipped';
+
+  // Retry tracking
+  retry_count: number;
+
+  // Results
+  external_id?: string; // e.g., GitHub issue number
+  external_url?: string; // e.g., GitHub issue URL
+  export_data: Record<string, any>; // exported data
+  error_message?: string;
+
+  // Timing
+  started_at?: Date;
+  completed_at?: Date;
+
+  created_at: Date;
+  updated_at: Date;
+}
+
 // Ticket types
 export interface Ticket {
   id: string;
@@ -414,6 +477,7 @@ export interface Ticket {
   updated_at: Date;
 }
 
+<<<<<<< HEAD
 // B-306: Readiness Gate Override Types
 export interface ReadinessGateOverride {
   id: string;
@@ -696,4 +760,54 @@ export interface UpdatePersonaProgressionGateRequest {
   persona_type?: string;
   gate_order?: number;
   is_active?: boolean;
+}
+
+// Request/Response DTOs for export batches
+export interface CreateExportBatchRequest {
+  project_id: string;
+  type: 'github_issues' | 'linear_issues';
+  target_service: 'github' | 'linear';
+  target_config: Record<string, any>;
+  requirement_ids?: string[]; // If specified, only export these requirements
+  max_retries?: number;
+  retry_delay_seconds?: number;
+}
+
+export interface ExportBatchProgress {
+  batch_id: string;
+  status: string;
+  progress: {
+    total_items: number;
+    processed_items: number;
+    failed_items: number;
+    percentage: number;
+  };
+  current_item?: string;
+  estimated_completion?: Date;
+}
+
+export interface GitHubExportConfig {
+  repository: {
+    owner: string;
+    name: string;
+  };
+  labels?: string[];
+  assignees?: string[];
+  milestone?: string;
+  template?: {
+    title_prefix?: string;
+    body_template?: string;
+  };
+}
+
+export interface LinearExportConfig {
+  workspace_id: string;
+  team_id: string;
+  project_id?: string;
+  labels?: string[];
+  assignee_id?: string;
+  template?: {
+    title_prefix?: string;
+    description_template?: string;
+  };
 }
