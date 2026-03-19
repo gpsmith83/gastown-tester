@@ -18,8 +18,10 @@ import linearRoutes from './routes/linear';
 import githubRepositoryRoutes from './routes/github-repositories';
 import jobRoutes from './routes/jobs';
 import contextSourceRoutes from './routes/context-sources';
-import personaProgressionRoutes from './routes/personaProgression';
+import monitoringRoutes from './routes/monitoring';
 import { globalAIService } from './services/ai-provider';
+import { sanitizeResponse } from './middleware/sanitizeResponse';
+import { performanceMonitoringMiddleware } from './middleware/performanceMonitoring';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -43,7 +45,56 @@ app.use(cors({
   credentials: true
 }));
 
-// Middleware
+// Security headers middleware (updated for frontend integration)
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://api.github.com"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
+
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'fallback-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Logging middleware
+app.use(morgan('combined', {
+  skip: (req: Request) => {
+    // Skip logging for health checks to reduce noise
+    return req.path === '/health';
+  }
+}));
+
+// Correlation ID middleware (must be before other logging middleware)
+app.use(correlationMiddleware);
+
+// Performance monitoring middleware (must be after correlation middleware)
+app.use(performanceMonitoringMiddleware);
+
+// JSON parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -85,7 +136,7 @@ app.get('/', (req: Request, res: Response) => {
       githubRepositories: '/api/github-repositories',
       jobs: '/api/jobs',
       context_sources: '/api/context-sources',
-      personaProgression: '/api/persona-progression'
+      monitoring: '/api/monitoring'
     }
   });
 });
@@ -102,7 +153,7 @@ app.use('/api/linear', linearRoutes);
 app.use('/api/github-repositories', githubRepositoryRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/context-sources', contextSourceRoutes);
-app.use('/api/persona-progression', personaProgressionRoutes);
+app.use('/api/monitoring', monitoringRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
