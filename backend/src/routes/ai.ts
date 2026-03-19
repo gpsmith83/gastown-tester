@@ -1,13 +1,10 @@
 import express, { Request, Response } from 'express';
 import { globalAIService, AICompletionRequest } from '../services/ai-provider';
 import { aiLogger } from '../utils/logger';
-<<<<<<< HEAD
 import { requireAuth } from '../config/auth';
 import { ProjectModel } from '../models/Project';
 import { User } from '../models/types';
-=======
 import { AIAuditService } from '../services/ai-audit-service';
->>>>>>> dust-polecat/polecat/nitro/gt-x4x
 
 const router = express.Router();
 
@@ -89,10 +86,9 @@ router.post('/complete', async (req: Request, res: Response) => {
       });
     }
 
-<<<<<<< HEAD
     // Extract and validate project context
     const projectId = req.headers['x-project-id'] as string;
-=======
+
     // Extract context for audit logging
     const userId = (req as any).user?.id;
     const requirementId = req.headers['x-requirement-id'] as string;
@@ -101,8 +97,6 @@ router.post('/complete', async (req: Request, res: Response) => {
     const auditLevel = (req.headers['x-audit-level'] as 'full' | 'metadata-only' | 'disabled') || 'full';
 
     const providerInfo = globalAIService.getProviderInfo();
->>>>>>> dust-polecat/polecat/nitro/gt-x4x
-
     if (projectId) {
       // Verify user has access to the specified project
       const hasAccess = await ProjectModel.canUserAccess(projectId, user.id);
@@ -116,19 +110,38 @@ router.post('/complete', async (req: Request, res: Response) => {
 
     logger.info('Sending request to AI provider', {
       operation: 'ai_completion',
-<<<<<<< HEAD
-      userId: user.id,
+      userId,
       projectId,
-      messageCount: request.messages.length
+      messageCount: request.messages.length,
+      correlationId,
+      auditLevel
     });
 
-    const response = await globalAIService.complete(request, {
-      userId: user.id,
-      projectId,
-    });
-=======
-      userId,
-      projectId: requirementId,
+    // Execute AI completion with full audit logging
+    const result = await AIAuditService.executeWithAudit(
+      () => globalAIService.complete(request, { userId, projectId }),
+      {
+        requirement_id: requirementId,
+        user_id: userId,
+        provider_type: providerInfo?.type || 'unknown',
+        provider_model: providerInfo?.model,
+        provider_endpoint: 'configured-endpoint',
+        correlation_id: correlationId,
+        job_id: jobId,
+        session_context: {
+          user_agent: req.headers['user-agent'],
+          ip: req.ip,
+          session_id: (req as any).sessionID
+        },
+        request_payload: request,
+        audit_level: auditLevel,
+        retention_policy: 'standard'
+      }
+    );
+
+    // Log sanitized information to ordinary logs (no sensitive content)
+    const sanitizedRequest = AIAuditService.sanitizeRequestForLogging(request);
+    const sanitizedResponse = AIAuditService.sanitizeForLogging(result.response);
       messageCount: request.messages.length,
       correlationId,
       auditLevel
@@ -159,7 +172,6 @@ router.post('/complete', async (req: Request, res: Response) => {
     // Log sanitized information to ordinary logs (no sensitive content)
     const sanitizedRequest = AIAuditService.sanitizeRequestForLogging(request);
     const sanitizedResponse = AIAuditService.sanitizeForLogging(result.response);
->>>>>>> dust-polecat/polecat/nitro/gt-x4x
 
     logger.info('AI completion successful', {
       operation: 'ai_completion',

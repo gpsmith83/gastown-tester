@@ -50,10 +50,12 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
+  origin: process.env.NODE_ENV === 'production'
+    ? process.env.FRONTEND_URL
     : ['http://localhost:4200', 'http://localhost:3000'],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Project-Id']
 }));
 
 // Security headers middleware (updated for frontend integration)
@@ -120,7 +122,7 @@ app.use((req: Request, res: Response, next) => {
   next();
 });
 
-// Response sanitization
+// Response sanitization middleware (prevents exposure of sensitive data)
 app.use(sanitizeResponse);
 
 // Health check endpoint
