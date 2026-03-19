@@ -30,7 +30,6 @@ import { appLogger, apiLogger } from './utils/logger';
 
 // Import security middleware
 import {
-  securityHeaders,
   generalRateLimit,
   authRateLimit,
   sanitizeInput,
@@ -62,7 +61,6 @@ app.use(cors({
 }));
 
 // Enhanced security middleware
-app.use(securityHeaders);
 app.use(securityLogging);
 app.use(generalRateLimit);
 
