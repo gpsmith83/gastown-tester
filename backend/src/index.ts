@@ -15,8 +15,9 @@ import { isDatabaseAvailable, initializeDatabase } from './config/database';
 import userRoutes from './routes/users';
 import workspaceRoutes from './routes/workspaces';
 import projectRoutes from './routes/projects';
-import requirementRoutes from './routes/requirements';
 import aiRoutes from './routes/ai';
+import aiAuditRoutes from './routes/ai-audit';
+import requirementRoutes from './routes/requirements';
 import refinementRoutes from './routes/refinements';
 import ticketCandidateRoutes from './routes/ticket-candidates';
 import ticketRoutes from './routes/tickets';
@@ -27,6 +28,7 @@ import contextSourceRoutes from './routes/context-sources';
 import monitoringRoutes from './routes/monitoring';
 import personaProgressionRoutes from './routes/personaProgression';
 import { exportsRouter } from './routes/exports';
+import personaOrchestrationRoutes from './routes/persona-orchestration';
 import { globalAIService } from './services/ai-provider';
 import { performanceMonitoringMiddleware } from './middleware/performanceMonitoring';
 import { globalRetryProcessor } from './services/RetryProcessor';
@@ -136,6 +138,7 @@ app.get('/', (req: Request, res: Response) => {
       workspaces: '/api/workspaces',
       projects: '/api/projects',
       ai: '/api/ai',
+      'ai-audit': '/api/ai/audit',
       requirements: '/api/requirements',
       tickets: '/api/tickets',
       linear: '/api/linear',
@@ -144,7 +147,8 @@ app.get('/', (req: Request, res: Response) => {
       context_sources: '/api/context-sources',
       monitoring: '/api/monitoring',
       personaProgression: '/api/persona-progression',
-      exports: '/api/exports'
+      exports: '/api/exports',
+      'persona-orchestration': '/api/persona-orchestration'
     }
   });
 });
@@ -153,8 +157,9 @@ app.get('/', (req: Request, res: Response) => {
 app.use('/auth', authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/projects', projectRoutes);
-app.use('/api/requirements', requirementRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/ai/audit', aiAuditRoutes);
+app.use('/api/requirements', requirementRoutes);
 app.use('/api/refinements', refinementRoutes);
 app.use('/api/ticket-candidates', ticketCandidateRoutes);
 app.use('/api/tickets', ticketRoutes);
@@ -165,6 +170,7 @@ app.use('/api/context-sources', contextSourceRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/persona-progression', personaProgressionRoutes);
 app.use('/api/exports', exportsRouter);
+app.use('/api/persona-orchestration', personaOrchestrationRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -270,15 +276,22 @@ async function startServer() {
           workspaces: `http://localhost:${PORT}/api/workspaces`,
           projects: `http://localhost:${PORT}/api/projects`,
           ai: `http://localhost:${PORT}/api/ai`,
+          'ai-audit': `http://localhost:${PORT}/api/ai/audit`,
           requirements: `http://localhost:${PORT}/api/requirements`,
           linear: `http://localhost:${PORT}/api/linear`,
           githubRepositories: `http://localhost:${PORT}/api/github-repositories`,
           jobs: `http://localhost:${PORT}/api/jobs`,
           contextSources: `http://localhost:${PORT}/api/context-sources`,
           personaProgression: `http://localhost:${PORT}/api/persona-progression`,
-          exports: `http://localhost:${PORT}/api/exports`
+          exports: `http://localhost:${PORT}/api/exports`,
+          personaOrchestration: `http://localhost:${PORT}/api/persona-orchestration`
         }
       });
+
+      // Also log to console for development visibility
+      console.log('🚀 Gastown Tester API server running on port', PORT);
+      console.log('📊 AI Audit API:', `http://localhost:${PORT}/api/ai/audit`);
+      console.log('🌍 Environment:', process.env.NODE_ENV || 'development');
     });
 
     return server;

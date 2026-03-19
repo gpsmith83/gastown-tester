@@ -1,9 +1,13 @@
 import express, { Request, Response } from 'express';
 import { globalAIService, AICompletionRequest } from '../services/ai-provider';
 import { aiLogger } from '../utils/logger';
+<<<<<<< HEAD
 import { requireAuth } from '../config/auth';
 import { ProjectModel } from '../models/Project';
 import { User } from '../models/types';
+=======
+import { AIAuditService } from '../services/ai-audit-service';
+>>>>>>> dust-polecat/polecat/nitro/gt-x4x
 
 const router = express.Router();
 
@@ -50,7 +54,7 @@ router.get('/health', async (req: Request, res: Response) => {
 
 /**
  * POST /ai/complete
- * Send a completion request to the AI provider
+ * Send a completion request to the AI provider with full audit logging
  */
 router.post('/complete', async (req: Request, res: Response) => {
   const logger = aiLogger.withRequest(req);
@@ -85,8 +89,19 @@ router.post('/complete', async (req: Request, res: Response) => {
       });
     }
 
+<<<<<<< HEAD
     // Extract and validate project context
     const projectId = req.headers['x-project-id'] as string;
+=======
+    // Extract context for audit logging
+    const userId = (req as any).user?.id;
+    const requirementId = req.headers['x-requirement-id'] as string;
+    const correlationId = (req as any).correlationId; // From correlation middleware
+    const jobId = req.headers['x-job-id'] as string;
+    const auditLevel = (req.headers['x-audit-level'] as 'full' | 'metadata-only' | 'disabled') || 'full';
+
+    const providerInfo = globalAIService.getProviderInfo();
+>>>>>>> dust-polecat/polecat/nitro/gt-x4x
 
     if (projectId) {
       // Verify user has access to the specified project
@@ -101,6 +116,7 @@ router.post('/complete', async (req: Request, res: Response) => {
 
     logger.info('Sending request to AI provider', {
       operation: 'ai_completion',
+<<<<<<< HEAD
       userId: user.id,
       projectId,
       messageCount: request.messages.length
@@ -110,19 +126,78 @@ router.post('/complete', async (req: Request, res: Response) => {
       userId: user.id,
       projectId,
     });
+=======
+      userId,
+      projectId: requirementId,
+      messageCount: request.messages.length,
+      correlationId,
+      auditLevel
+    });
+
+    // Execute AI completion with full audit logging
+    const result = await AIAuditService.executeWithAudit(
+      () => globalAIService.complete(request, { userId, projectId: requirementId }),
+      {
+        requirement_id: requirementId,
+        user_id: userId,
+        provider_type: providerInfo?.type || 'unknown',
+        provider_model: providerInfo?.model,
+        provider_endpoint: 'configured-endpoint',
+        correlation_id: correlationId,
+        job_id: jobId,
+        session_context: {
+          user_agent: req.headers['user-agent'],
+          ip: req.ip,
+          session_id: (req as any).sessionID
+        },
+        request_payload: request,
+        audit_level: auditLevel,
+        retention_policy: 'standard'
+      }
+    );
+
+    // Log sanitized information to ordinary logs (no sensitive content)
+    const sanitizedRequest = AIAuditService.sanitizeRequestForLogging(request);
+    const sanitizedResponse = AIAuditService.sanitizeForLogging(result.response);
+>>>>>>> dust-polecat/polecat/nitro/gt-x4x
 
     logger.info('AI completion successful', {
       operation: 'ai_completion',
-      responseTokens: response.usage?.totalTokens || 0,
-      model: response.model
+      audit_id: result.audit_id,
+      responseTokens: result.response.usage?.totalTokens || 0,
+      model: result.response.model,
+      correlationId
     });
 
-    res.json(response);
+    console.log('[AI_COMPLETION]', {
+      correlation_id: correlationId,
+      audit_id: result.audit_id,
+      provider_type: providerInfo?.type,
+      request_summary: sanitizedRequest,
+      response_summary: sanitizedResponse
+    });
+
+    // Return response with audit ID for traceability
+    res.json({
+      ...result.response,
+      audit_id: result.audit_id,
+      correlation_id: correlationId
+    });
+
   } catch (error) {
     logger.error('AI completion failed', {
       operation: 'ai_completion',
       error: error instanceof Error ? error.message : 'Unknown error',
-      errorName: error instanceof Error ? error.name : 'UnknownError'
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+      correlationId: (req as any).correlationId
+    });
+
+    // Also log error without sensitive content for debugging
+    console.error('[AI_ROUTE] Completion error (sanitized):', {
+      error_type: error instanceof Error ? error.name : 'UnknownError',
+      error_message: error instanceof Error ? error.message : 'Unknown error',
+      correlation_id: (req as any).correlationId,
+      provider_type: globalAIService.getProviderInfo()?.type
     });
 
     if (error instanceof Error && error.name === 'AIProviderError') {
