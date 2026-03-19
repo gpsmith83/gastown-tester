@@ -1,0 +1,66 @@
+# Docker ignore file - excludes files from Docker build context
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Development files
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed in containers)
+*.md
+docs/
+
+# Test files
+coverage/
+*.test.js
+*.test.ts
+__tests__/
+
+# Cache directories
+.cache/
+.npm/
+.yarn/
+
+# Angular cache
+.angular/
+
+# Runtime files
+.runtime/
+
+# Beads directory
+.beads/
+
+# Claude directory
+.claude/
+
+# Scripts (not needed in containers)
+scripts/

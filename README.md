@@ -13,11 +13,25 @@ Full-stack web application with Angular frontend and Express API backend.
 
 ## Quick Start
 
-### Prerequisites
+### Option 1: Docker Compose (Recommended)
+Complete environment with database included:
+
+```bash
+# Bootstrap and start with Docker
+npm run bootstrap
+npm run docker:up
+```
+
+### Option 2: Native Development
+Run services directly on your machine:
+
+**Prerequisites:**
 - Node.js >= 18.0.0
 - npm
+- PostgreSQL 15+ (for data persistence)
+- Redis 7+ (optional, for job processing)
 
-### Installation
+**Installation:**
 ```bash
 npm run install:all
 ```
@@ -31,6 +45,33 @@ npm run dev
 npm run dev:backend    # Express API on http://localhost:3000
 npm run dev:frontend   # Angular app on http://localhost:4200
 ```
+
+**Access Points:**
+- Frontend: http://localhost:4200 (Angular development server)
+- API: http://localhost:3001
+- API Health: http://localhost:3001/health
+
+## Architecture
+
+**Monorepo Structure:**
+- `backend/` - Express.js REST API server (primary)
+- `frontend/` - Angular application (primary)
+- `packages/shared` - Common types and utilities
+- `packages/api` - Alternative Express.js API server
+- `packages/frontend` - Alternative React frontend (Vite)
+- `packages/worker` - Background job processing
+
+**Technology Stack:**
+- **Language:** TypeScript
+- **Package Manager:** npm workspaces
+- **API Framework:** Express.js
+- **Frontend Framework:** Angular (primary) + React/Vite (alternative)
+- **Database:** PostgreSQL 15
+- **Cache/Queue:** Redis 7
+- **Container:** Docker Compose
+- **Testing:** Jest + Jasmine/Karma
+- **Linting:** ESLint
+- **Build:** TypeScript compiler + Angular CLI
 
 ### Build
 ```bash
@@ -49,6 +90,13 @@ npm start
 ```
 
 ## Environment Configuration
+
+✅ **B-006: Docker Compose local stack** (Complete)
+- Full containerized development environment
+- PostgreSQL database with initialization
+- Redis for job queue processing
+- Hot reload for all services
+- Comprehensive documentation and scripts
 
 The application will run with basic functionality using the default `.env` file, but you'll need to configure additional services for full feature access.
 
@@ -244,7 +292,18 @@ JWT_EXPIRES_IN=1h
 
 ## Development Workflow
 
+**Docker Compose (Recommended):**
+1. **Prerequisites:** Docker 20.10+, Docker Compose 2.0+, Node.js 18+, npm 9+
+2. **Setup:** `npm run bootstrap && npm run docker:up`
+3. **Documentation:** [docs/DOCKER_COMPOSE.md](./docs/DOCKER_COMPOSE.md)
+
+**Native Development:**
+1. **Prerequisites:** Node.js 18+, npm 9+, PostgreSQL 15+, Redis 7+
+2. **Setup:** `npm run bootstrap && npm run verify && npm run dev`
+3. **Documentation:** [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md)
+
+**Manual Development:**
 1. Start development servers with `npm run dev`
 2. Frontend available at http://localhost:4200
-3. Backend API available at http://localhost:3000
+3. Backend API available at http://localhost:3001
 4. Frontend will proxy API requests to backend during development

@@ -2,34 +2,52 @@
 
 ## Quick Start
 
-### Prerequisites
+### Development Options
+
+Choose between two development approaches:
+
+#### Option A: Docker Compose (Recommended)
+Complete containerized environment with database and Redis included.
+
+**Prerequisites:**
+- Docker 20.10+ and Docker Compose 2.0+
+- Node.js 18+ and npm 9+ (for bootstrap only)
+
+**Setup:**
+```bash
+git clone <repository-url>
+cd gastown-tester
+npm run bootstrap
+npm run docker:up
+```
+
+**Documentation:** See [DOCKER_COMPOSE.md](./DOCKER_COMPOSE.md) for detailed guide.
+
+#### Option B: Native Development
+Run services directly on your machine.
+
+**Prerequisites:**
 - Node.js 18+
 - npm 9+
+- PostgreSQL 15+ (local installation)
+- Redis 7+ (local installation)
 - Git
 
-### Bootstrap Process
+**Setup:**
+```bash
+git clone <repository-url>
+cd gastown-tester
+npm run bootstrap
+npm run verify
+npm run dev
+```
 
-1. **Clone and bootstrap:**
-   ```bash
-   git clone <repository-url>
-   cd gastown-tester
-   npm run bootstrap
-   ```
+### Access Applications
 
-2. **Verify setup:**
-   ```bash
-   npm run verify
-   ```
-
-3. **Start development:**
-   ```bash
-   npm run dev
-   ```
-
-4. **Access applications:**
-   - Frontend: http://localhost:3000
-   - API: http://localhost:3001
-   - API Health: http://localhost:3001/health
+Once running (either option):
+- **Frontend**: http://localhost:3000
+- **API**: http://localhost:3001
+- **API Health**: http://localhost:3001/health
 
 ## Repository Structure
 
@@ -81,13 +99,28 @@ gastown-tester/
 ```bash
 npm run bootstrap     # Initial setup (dependencies + env files + source files)
 npm run verify       # Test entire setup
-npm run dev          # Start all services in development mode
+npm run dev          # Start all services in development mode (native)
 npm run build        # Build all packages
 npm run lint         # Lint all packages
 npm run test         # Run tests for all packages
 npm run db:migrate   # Run database migrations (API)
 npm run db:seed      # Seed database (API)
 npm run db:reset     # Reset database (API)
+```
+
+### Docker Compose
+```bash
+npm run docker:up            # Start all services with Docker Compose
+npm run docker:up:build      # Start services, rebuilding containers first
+npm run docker:up:detach     # Start services in background (detached)
+npm run docker:down          # Stop all Docker services
+npm run docker:down:volumes  # Stop services and remove data volumes
+npm run docker:logs          # View logs from all services
+npm run docker:logs:api      # View logs from API service only
+npm run docker:logs:frontend # View logs from frontend service only
+npm run docker:logs:worker   # View logs from worker service only
+npm run docker:restart       # Restart all Docker services
+npm run docker:ps           # Show status of all Docker services
 ```
 
 ### Individual Packages
