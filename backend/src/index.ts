@@ -28,6 +28,17 @@ import { sanitizeResponse } from './middleware/sanitizeResponse';
 import { correlationMiddleware } from './middleware/correlation';
 import { appLogger, apiLogger } from './utils/logger';
 
+// Import security middleware
+import {
+  securityHeaders,
+  generalRateLimit,
+  authRateLimit,
+  sanitizeInput,
+  requestSizeLimit,
+  securityLogging,
+  validateTenantIsolation
+} from './middleware/security';
+
 // Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,6 +60,11 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Project-Id']
 }));
+
+// Enhanced security middleware
+app.use(securityHeaders);
+app.use(securityLogging);
+app.use(generalRateLimit);
 
 // Security headers middleware (updated for frontend integration)
 app.use(helmet({
@@ -96,9 +112,14 @@ app.use(morgan('combined', {
 // Correlation ID middleware (must be before other logging middleware)
 app.use(correlationMiddleware);
 
-// JSON parsing middleware
+// JSON parsing middleware with enhanced security
+app.use(requestSizeLimit(1024 * 1024 * 10)); // 10MB limit
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Input sanitization and validation
+app.use(sanitizeInput);
+app.use(validateTenantIsolation);
 
 // Enhanced request logging middleware with correlation tracking
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -152,7 +173,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // API Routes
-app.use('/auth', authRoutes);
+app.use('/auth', authRateLimit, authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/ai', aiRoutes);

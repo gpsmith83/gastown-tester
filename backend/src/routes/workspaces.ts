@@ -3,6 +3,13 @@ import { requireAuth } from '../config/auth';
 import { WorkspaceModel } from '../models/Workspace';
 import { CreateWorkspaceRequest } from '../models/types';
 import { User } from '../models/types';
+import {
+  requireWorkspaceAccess,
+  requireWorkspaceOwnership,
+  requireWorkspaceAdmin,
+  preventCrossWorkspaceAccess
+} from '../middleware/accessControl';
+import { createRateLimit, updateRateLimit } from '../middleware/security';
 
 const router = Router();
 
@@ -29,7 +36,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Create new workspace
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', createRateLimit, async (req: Request, res: Response) => {
   try {
     const user = req.user as User;
     const data: CreateWorkspaceRequest = req.body;
@@ -77,19 +84,9 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // Get specific workspace
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', requireWorkspaceAccess, async (req: Request, res: Response) => {
   try {
-    const user = req.user as User;
     const { id } = req.params;
-
-    // Check if user has access to this workspace
-    const membership = await WorkspaceModel.isUserMember(id, user.id);
-    if (!membership) {
-      return res.status(403).json({
-        error: 'Access Denied',
-        message: 'You do not have access to this workspace'
-      });
-    }
 
     const workspace = await WorkspaceModel.findById(id);
     if (!workspace) {
@@ -118,28 +115,10 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // Update workspace
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', updateRateLimit, requireWorkspaceAccess, requireWorkspaceAdmin, async (req: Request, res: Response) => {
   try {
-    const user = req.user as User;
     const { id } = req.params;
     const data: Partial<CreateWorkspaceRequest> = req.body;
-
-    // Check if user has access to this workspace
-    const membership = await WorkspaceModel.isUserMember(id, user.id);
-    if (!membership) {
-      return res.status(403).json({
-        error: 'Access Denied',
-        message: 'You do not have access to this workspace'
-      });
-    }
-
-    // Only owners and admins can update workspace
-    if (membership.role !== 'owner' && membership.role !== 'admin') {
-      return res.status(403).json({
-        error: 'Access Denied',
-        message: 'You do not have permission to update this workspace'
-      });
-    }
 
     // Basic validation
     if (data.name !== undefined) {
@@ -186,19 +165,9 @@ router.put('/:id', async (req: Request, res: Response) => {
 });
 
 // Delete workspace
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', requireWorkspaceAccess, requireWorkspaceOwnership, async (req: Request, res: Response) => {
   try {
-    const user = req.user as User;
     const { id } = req.params;
-
-    // Check if user is the owner of this workspace
-    const membership = await WorkspaceModel.isUserMember(id, user.id);
-    if (!membership || membership.role !== 'owner') {
-      return res.status(403).json({
-        error: 'Access Denied',
-        message: 'Only workspace owners can delete the workspace'
-      });
-    }
 
     const deleted = await WorkspaceModel.delete(id);
     if (!deleted) {
