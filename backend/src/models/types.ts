@@ -376,6 +376,22 @@ export interface PersonaProgressionHistory {
   updated_at: Date;
 }
 
+// Ticket types
+export interface Ticket {
+  id: string;
+  title: string;
+  description?: string;
+  project_id: string;
+  assignee_id?: string;
+  author_id: string;
+  priority: number; // 1=highest, 5=lowest
+  status: 'open' | 'in_progress' | 'completed' | 'closed' | 'cancelled';
+  type: 'bug' | 'feature' | 'task' | 'enhancement';
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface CreatePersonaProgressionRequest {
   project_id: string;
   session_id: string;
@@ -439,4 +455,19 @@ export interface PersonaProgressionAnalytics {
     average_score: number;
     completion_rate: number;
   }>;
+}
+
+export interface CreateTicketRequest {
+  title: string;
+  description?: string;
+  project_id: string;
+  assignee_id?: string;
+  priority?: number;
+  type?: 'bug' | 'feature' | 'task' | 'enhancement';
+}
+
+export interface TicketWithDetails extends Ticket {
+  project: Project;
+  author: User;
+  assignee?: User;
 }

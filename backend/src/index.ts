@@ -2,9 +2,14 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import session from 'express-session';
+import passport from 'passport';
+import morgan from 'morgan';
 import { correlationMiddleware } from './middleware/correlation';
 import { appLogger, apiLogger } from './utils/logger';
 import { sanitizeResponse } from './middleware/sanitizeResponse';
+import authRoutes from './routes/auth';
+import { isDatabaseAvailable, initializeDatabase } from './config/database';
 
 // Import route modules
 import userRoutes from './routes/users';
@@ -14,13 +19,13 @@ import requirementRoutes from './routes/requirements';
 import aiRoutes from './routes/ai';
 import refinementRoutes from './routes/refinements';
 import ticketCandidateRoutes from './routes/ticket-candidates';
+import ticketRoutes from './routes/tickets';
 import linearRoutes from './routes/linear';
 import githubRepositoryRoutes from './routes/github-repositories';
 import jobRoutes from './routes/jobs';
 import contextSourceRoutes from './routes/context-sources';
 import monitoringRoutes from './routes/monitoring';
 import { globalAIService } from './services/ai-provider';
-import { sanitizeResponse } from './middleware/sanitizeResponse';
 import { performanceMonitoringMiddleware } from './middleware/performanceMonitoring';
 
 const app = express();
@@ -98,9 +103,6 @@ app.use(performanceMonitoringMiddleware);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Correlation middleware (should be early in the stack)
-app.use(correlationMiddleware);
-
 // Request logging middleware
 app.use((req: Request, res: Response, next) => {
   apiLogger.info('Request received', {
@@ -132,6 +134,7 @@ app.get('/', (req: Request, res: Response) => {
       projects: '/api/projects',
       ai: '/api/ai',
       requirements: '/api/requirements',
+      tickets: '/api/tickets',
       linear: '/api/linear',
       githubRepositories: '/api/github-repositories',
       jobs: '/api/jobs',
@@ -149,6 +152,7 @@ app.use('/api/requirements', requirementRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/refinements', refinementRoutes);
 app.use('/api/ticket-candidates', ticketCandidateRoutes);
+app.use('/api/tickets', ticketRoutes);
 app.use('/api/linear', linearRoutes);
 app.use('/api/github-repositories', githubRepositoryRoutes);
 app.use('/api/jobs', jobRoutes);
@@ -267,10 +271,6 @@ server.then((srv) => {
     error: error instanceof Error ? error.message : 'Unknown error'
   });
   process.exit(1);
-});
-
-app.listen(PORT, () => {
-  appLogger.info(`Server running on port ${PORT}`);
 });
 
 export default app;

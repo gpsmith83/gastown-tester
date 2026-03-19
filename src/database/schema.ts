@@ -26,6 +26,15 @@ export const workspaces = pgTable('workspaces', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// Workspace members table
+export const workspaceMembers = pgTable('workspace_members', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id),
+  userId: uuid('user_id').notNull().references(() => users.id),
+  role: varchar('role', { length: 50 }).notNull().default('member'), // owner, admin, member
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 // Projects table
 export const projects = pgTable('projects', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -57,7 +66,6 @@ export const requirements = pgTable('requirements', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-// Context snapshots table for B-601: Repository context models and analysis
 // Ticket Candidates table
 export const ticketCandidates = pgTable("ticket_candidates", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -73,7 +81,7 @@ export const ticketCandidates = pgTable("ticket_candidates", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-
+// Context snapshots table for B-601: Repository context models and analysis
 export const contextSnapshots = pgTable('context_snapshots', {
   id: uuid('id').defaultRandom().primaryKey(),
   projectId: uuid('project_id').notNull().references(() => projects.id),
@@ -85,6 +93,22 @@ export const contextSnapshots = pgTable('context_snapshots', {
   lastModified: timestamp('last_modified').notNull(),
   ingestedAt: timestamp('ingested_at').notNull().defaultNow(),
   ingestionMetadata: jsonb('ingestion_metadata').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// Tickets table
+export const tickets = pgTable('tickets', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description'),
+  projectId: uuid('project_id').notNull().references(() => projects.id),
+  assigneeId: uuid('assignee_id').references(() => users.id),
+  authorId: uuid('author_id').notNull().references(() => users.id),
+  priority: integer('priority').notNull().default(3), // 1=highest, 5=lowest
+  status: varchar('status', { length: 50 }).notNull().default('open'), // open, in_progress, completed, closed, cancelled
+  type: varchar('type', { length: 50 }).notNull().default('task'), // bug, feature, task, enhancement
+  isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -101,12 +125,14 @@ export const contextChanges = pgTable('context_changes', {
   detectedAt: timestamp('detected_at').notNull().defaultNow(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
-
 // Define relationships
 export const usersRelations = relations(users, ({ many }) => ({
   ownedWorkspaces: many(workspaces),
+  workspaceMemberships: many(workspaceMembers),
   authoredRequirements: many(requirements),
   authoredTicketCandidates: many(ticketCandidates),
+  authoredTickets: many(tickets),
+  assignedTickets: many(tickets),
 }));
 
 export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
@@ -115,6 +141,18 @@ export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
     references: [users.id],
   }),
   projects: many(projects),
+  members: many(workspaceMembers),
+}));
+
+export const workspaceMembersRelations = relations(workspaceMembers, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [workspaceMembers.workspaceId],
+    references: [workspaces.id],
+  }),
+  user: one(users, {
+    fields: [workspaceMembers.userId],
+    references: [users.id],
+  }),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
@@ -124,6 +162,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   }),
   requirements: many(requirements),
   contextSnapshots: many(contextSnapshots),
+  tickets: many(tickets),
 }));
 
 export const requirementsRelations = relations(requirements, ({ one, many }) => ({
@@ -149,8 +188,7 @@ export const ticketCandidatesRelations = relations(ticketCandidates, ({ one }) =
   }),
 }));
 
-export const contextSnapshotsRelations = relations(ticketCandidates,
-  contextSnapshots, ({ one, many }) => ({
+export const contextSnapshotsRelations = relations(contextSnapshots, ({ one, many }) => ({
   project: one(projects, {
     fields: [contextSnapshots.projectId],
     references: [projects.id],
@@ -159,8 +197,7 @@ export const contextSnapshotsRelations = relations(ticketCandidates,
 }));
 
 export const contextChangesRelations = relations(contextChanges, ({ one }) => ({
-  snapshot: one(ticketCandidates,
-  contextSnapshots, {
+  snapshot: one(contextSnapshots, {
     fields: [contextChanges.snapshotId],
     references: [contextSnapshots.id],
   }),
@@ -170,20 +207,39 @@ export const contextChangesRelations = relations(contextChanges, ({ one }) => ({
   }),
 }));
 
+export const ticketsRelations = relations(tickets, ({ one }) => ({
+  project: one(projects, {
+    fields: [tickets.projectId],
+    references: [projects.id],
+  }),
+  author: one(users, {
+    fields: [tickets.authorId],
+    references: [users.id],
+  }),
+  assignee: one(users, {
+    fields: [tickets.assigneeId],
+    references: [users.id],
+  }),
+}));
+
 // Export all tables for migrations
 export const schema = {
   users,
   workspaces,
+  workspaceMembers,
   projects,
   requirements,
   ticketCandidates,
   contextSnapshots,
   contextChanges,
+  tickets,
   usersRelations,
   workspacesRelations,
+  workspaceMembersRelations,
   projectsRelations,
   requirementsRelations,
   ticketCandidatesRelations,
   contextSnapshotsRelations,
   contextChangesRelations,
+  ticketsRelations,
 };
