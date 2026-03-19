@@ -57,10 +57,29 @@ export const requirements = pgTable('requirements', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// Ticket Candidates table
+export const ticketCandidates = pgTable('ticket_candidates', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  title: varchar('title', { length: 500 }).notNull(),
+  description: text('description'),
+  requirementId: uuid('requirement_id').notNull().references(() => requirements.id),
+  authorId: uuid('author_id').notNull().references(() => users.id),
+  priority: integer('priority').notNull().default(3), // 1=highest, 5=lowest
+  status: varchar('status', { length: 50 }).notNull().default('draft'), // draft, review, approved, rejected, archived
+  orderIndex: integer('order_index').notNull().default(0), // For ordering within a requirement
+  metadata: text('metadata'), // JSON field for additional metadata
+  estimatedEffort: varchar('estimated_effort', { length: 50 }), // e.g., 'small', 'medium', 'large', or story points
+  labels: text('labels'), // JSON array of labels/tags
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 // Define relationships
 export const usersRelations = relations(users, ({ many }) => ({
   ownedWorkspaces: many(workspaces),
   authoredRequirements: many(requirements),
+  authoredTicketCandidates: many(ticketCandidates),
 }));
 
 export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
@@ -79,13 +98,25 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   requirements: many(requirements),
 }));
 
-export const requirementsRelations = relations(requirements, ({ one }) => ({
+export const requirementsRelations = relations(requirements, ({ one, many }) => ({
   project: one(projects, {
     fields: [requirements.projectId],
     references: [projects.id],
   }),
   author: one(users, {
     fields: [requirements.authorId],
+    references: [users.id],
+  }),
+  ticketCandidates: many(ticketCandidates),
+}));
+
+export const ticketCandidatesRelations = relations(ticketCandidates, ({ one }) => ({
+  requirement: one(requirements, {
+    fields: [ticketCandidates.requirementId],
+    references: [requirements.id],
+  }),
+  author: one(users, {
+    fields: [ticketCandidates.authorId],
     references: [users.id],
   }),
 }));
@@ -96,8 +127,10 @@ export const schema = {
   workspaces,
   projects,
   requirements,
+  ticketCandidates,
   usersRelations,
   workspacesRelations,
   projectsRelations,
   requirementsRelations,
+  ticketCandidatesRelations,
 };

@@ -17,6 +17,7 @@ import workspaceRoutes from './routes/workspaces';
 import projectRoutes from './routes/projects';
 import aiRoutes from './routes/ai';
 import requirementRoutes from './routes/requirements';
+import ticketCandidateRoutes from './routes/ticket-candidates';
 import linearRoutes from './routes/linear';
 import githubRepositoryRoutes from './routes/github-repositories';
 import jobRoutes from './routes/jobs';
@@ -143,6 +144,7 @@ app.get('/', (req: Request, res: Response) => {
       projects: '/api/projects',
       ai: '/api/ai',
       requirements: '/api/requirements',
+      ticketCandidates: '/api/ticket-candidates',
       linear: '/api/linear',
       githubRepositories: '/api/github-repositories',
       jobs: '/api/jobs',
@@ -157,6 +159,7 @@ app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/requirements', requirementRoutes);
+app.use('/api/ticket-candidates', ticketCandidateRoutes);
 app.use('/api/linear', linearRoutes);
 app.use('/api/github-repositories', githubRepositoryRoutes);
 app.use('/api/jobs', jobRoutes);
@@ -248,6 +251,7 @@ async function startServer() {
           projects: `http://localhost:${PORT}/api/projects`,
           ai: `http://localhost:${PORT}/api/ai`,
           requirements: `http://localhost:${PORT}/api/requirements`,
+          ticketCandidates: `http://localhost:${PORT}/api/ticket-candidates`,
           linear: `http://localhost:${PORT}/api/linear`,
           githubRepositories: `http://localhost:${PORT}/api/github-repositories`,
           jobs: `http://localhost:${PORT}/api/jobs`,

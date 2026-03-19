@@ -182,6 +182,41 @@ export interface RequirementWithDetails extends Requirement {
   author: User;
 }
 
+export interface TicketCandidate {
+  id: string;
+  title: string;
+  description?: string;
+  requirement_id: string;
+  author_id: string;
+  priority: number; // 1=highest, 5=lowest
+  status: 'draft' | 'review' | 'approved' | 'rejected' | 'archived';
+  order_index: number; // For ordering within a requirement
+  metadata?: string; // JSON string for additional metadata
+  estimated_effort?: string; // e.g., 'small', 'medium', 'large', or story points
+  labels?: string; // JSON array of labels/tags
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface TicketCandidateWithDetails extends TicketCandidate {
+  requirement: Requirement;
+  author: User;
+}
+
+// Request/Response DTOs for ticket candidates
+export interface CreateTicketCandidateRequest {
+  title: string;
+  description?: string;
+  requirement_id: string;
+  priority?: number;
+  status?: 'draft' | 'review' | 'approved' | 'rejected' | 'archived';
+  order_index?: number;
+  metadata?: any; // Will be JSON stringified
+  estimated_effort?: string;
+  labels?: string[];
+}
+
 export interface CreateLinearConnectionRequest {
   api_token: string;
   workspace_id: string;
