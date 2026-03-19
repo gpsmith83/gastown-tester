@@ -25,6 +25,7 @@ import githubRepositoryRoutes from './routes/github-repositories';
 import jobRoutes from './routes/jobs';
 import contextSourceRoutes from './routes/context-sources';
 import monitoringRoutes from './routes/monitoring';
+import personaProgressionRoutes from './routes/personaProgression';
 import { globalAIService } from './services/ai-provider';
 import { performanceMonitoringMiddleware } from './middleware/performanceMonitoring';
 
@@ -139,7 +140,8 @@ app.get('/', (req: Request, res: Response) => {
       githubRepositories: '/api/github-repositories',
       jobs: '/api/jobs',
       context_sources: '/api/context-sources',
-      monitoring: '/api/monitoring'
+      monitoring: '/api/monitoring',
+      personaProgression: '/api/persona-progression'
     }
   });
 });
@@ -158,6 +160,7 @@ app.use('/api/github-repositories', githubRepositoryRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/context-sources', contextSourceRoutes);
 app.use('/api/monitoring', monitoringRoutes);
+app.use('/api/persona-progression', personaProgressionRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

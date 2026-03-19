@@ -364,6 +364,7 @@ export interface UpdateContextSelectionRequest {
   }[];
 }
 
+<<<<<<< HEAD
 // Persona progression types (B-302)
 export interface PersonaProgressionHistory {
   id: string;
@@ -413,6 +414,42 @@ export interface Ticket {
   updated_at: Date;
 }
 
+// B-306: Readiness Gate Override Types
+export interface ReadinessGateOverride {
+  id: string;
+  requirement_id: string;
+  user_id: string;
+  dimension_id: string;
+  dimension_name: string;
+  override_reason: string;
+  original_score: number;
+  override_score: number;
+  override_type: 'manual' | 'automatic' | 'persona_rule';
+  expires_at?: Date;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ReadinessGateOverrideWithUser extends ReadinessGateOverride {
+  user: User;
+}
+
+export interface PersonaProgressionGate {
+  id: string;
+  project_id: string;
+  gate_name: string;
+  gate_description?: string;
+  required_dimensions: string[];
+  minimum_score: number;
+  allow_overrides: boolean;
+  persona_type?: string;
+  gate_order: number;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
 // Advanced ticket workflow types (B-404, B-405, B-406, B-407)
 export interface RequirementComment {
   id: string;
@@ -426,6 +463,7 @@ export interface RequirementComment {
   updated_at: Date;
 }
 
+<<<<<<< HEAD
 export interface CreatePersonaProgressionRequest {
   project_id: string;
   session_id: string;
@@ -617,4 +655,45 @@ export interface CreateRequirementAdvancedRequest extends CreateRequirementReque
   labels?: string[];
   watchers?: string[]; // User IDs to automatically watch this requirement
   metadata?: any;
+}
+
+// Request/Response DTOs for readiness gate overrides
+export interface CreateReadinessGateOverrideRequest {
+  requirement_id: string;
+  dimension_id: string;
+  dimension_name: string;
+  override_reason: string;
+  original_score?: number;
+  override_score?: number;
+  override_type?: 'manual' | 'automatic' | 'persona_rule';
+  expires_at?: Date;
+}
+
+export interface UpdateReadinessGateOverrideRequest {
+  override_reason?: string;
+  override_score?: number;
+  expires_at?: Date;
+  is_active?: boolean;
+}
+
+export interface CreatePersonaProgressionGateRequest {
+  project_id: string;
+  gate_name: string;
+  gate_description?: string;
+  required_dimensions?: string[];
+  minimum_score?: number;
+  allow_overrides?: boolean;
+  persona_type?: string;
+  gate_order?: number;
+}
+
+export interface UpdatePersonaProgressionGateRequest {
+  gate_name?: string;
+  gate_description?: string;
+  required_dimensions?: string[];
+  minimum_score?: number;
+  allow_overrides?: boolean;
+  persona_type?: string;
+  gate_order?: number;
+  is_active?: boolean;
 }
