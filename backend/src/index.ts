@@ -19,6 +19,8 @@ import aiRoutes from './routes/ai';
 import aiAuditRoutes from './routes/ai-audit';
 import requirementRoutes from './routes/requirements';
 import refinementRoutes from './routes/refinements';
+import refinementSessionRoutes from './routes/refinement-sessions';
+import requirementMessageRoutes from './routes/requirement-messages';
 import ticketCandidateRoutes from './routes/ticket-candidates';
 import ticketRoutes from './routes/tickets';
 import linearRoutes from './routes/linear';
@@ -143,6 +145,8 @@ app.get('/', (req: Request, res: Response) => {
       ai: '/api/ai',
       'ai-audit': '/api/ai/audit',
       requirements: '/api/requirements',
+      refinementSessions: '/api/refinement-sessions',
+      requirementMessages: '/api/requirement-messages',
       tickets: '/api/tickets',
       linear: '/api/linear',
       githubRepositories: '/api/github-repositories',
@@ -165,6 +169,8 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/ai/audit', aiAuditRoutes);
 app.use('/api/requirements', requirementRoutes);
 app.use('/api/refinements', refinementRoutes);
+app.use('/api/refinement-sessions', refinementSessionRoutes);
+app.use('/api/requirement-messages', requirementMessageRoutes);
 app.use('/api/ticket-candidates', ticketCandidateRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/linear', linearRoutes);

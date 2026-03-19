@@ -61,32 +61,31 @@ export interface ProjectMember {
   created_at: Date;
 }
 
-// Request/Response DTOs
-export interface CreateWorkspaceRequest {
-  name: string;
-  description?: string;
-}
-
-export interface CreateProjectRequest {
-  name: string;
-  description?: string;
-  workspace_id: string;
-  product_area?: string;
-  goals?: string[];
-  default_labels?: any[];
-  default_persona_stack?: any;
-  github_repo_url?: string;
-  github_repo_id?: string;
-}
-
-export interface WorkspaceWithProjects extends Workspace {
-  projects: Project[];
-  member_count: number;
-}
-
 export interface ProjectWithDetails extends Project {
   workspace: Workspace;
   owner: User;
+  members?: ProjectMember[];
+}
+
+export interface GitHubRepository {
+  id: string;
+  project_id: string;
+  github_repo_id: number;
+  owner: string;
+  name: string;
+  full_name: string;
+  description?: string;
+  url: string;
+  clone_url: string;
+  ssh_url: string;
+  private: boolean;
+  default_branch: string;
+  language?: string;
+  topics: string[];
+  access_level: 'read' | 'write' | 'admin';
+  webhook_configured: boolean;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface Requirement {
@@ -96,106 +95,13 @@ export interface Requirement {
   project_id: string;
   author_id: string;
   priority: number; // 1=highest, 5=lowest
-  status: 'draft' | 'open' | 'in_progress' | 'in_review' | 'testing' | 'blocked' | 'completed' | 'archived' | 'cancelled';
   type: 'feature' | 'bug' | 'enhancement' | 'epic';
+  status: 'draft' | 'active' | 'completed' | 'archived';
   github_issue_number?: number;
   github_issue_url?: string;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
-
-  // B-405: Assignment fields
-  assignee_id?: string;
-  assigned_at?: Date;
-  assigned_by?: string;
-
-  // B-406: Advanced prioritization
-  priority_label?: 'critical' | 'high' | 'medium' | 'low' | 'backlog';
-  due_date?: Date;
-  urgency_score?: number; // 0-100 calculated urgency
-
-  // B-407: Lifecycle management
-  estimated_hours?: number;
-  actual_hours?: number;
-  story_points?: number;
-  started_at?: Date;
-  completed_at?: Date;
-  resolution?: 'done' | 'wont_fix' | 'duplicate' | 'invalid';
-  resolution_notes?: string;
-  labels?: string[];
-  metadata?: any;
-}
-
-// Linear integration types (B-501)
-export interface LinearConnection {
-  id: string;
-  project_id: string;
-
-  // Linear API configuration
-  api_token_hash: string;
-  workspace_id: string;
-  workspace_name?: string;
-  team_id: string;
-  team_name?: string;
-
-  // Optional board/project mapping
-  board_id?: string;
-  board_name?: string;
-  project_id_linear?: string;
-  project_name_linear?: string;
-
-  // Validation and status
-  is_validated: boolean;
-  validation_error?: string;
-  last_validated_at?: Date;
-
-  // Connection metadata
-  linear_organization_id?: string;
-  linear_organization_name?: string;
-  permissions?: string[];
-
-  created_at: Date;
-  updated_at: Date;
-}
-
-// GitHub Repository Connection types
-export interface GitHubRepository {
-  id: string;
-  project_id: string;
-
-  // GitHub repository metadata
-  github_repo_id: number;
-  owner: string;
-  name: string;
-  full_name: string;
-  description?: string;
-  url: string;
-  clone_url: string;
-  ssh_url: string;
-
-  // Repository details
-  private: boolean;
-  default_branch: string;
-  language?: string;
-  topics?: string[];
-
-  // Access configuration
-  access_level: 'read' | 'write' | 'admin';
-  webhook_configured: boolean;
-
-  created_at: Date;
-  updated_at: Date;
-}
-
-// Request/Response DTOs for requirements
-export interface CreateRequirementRequest {
-  title: string;
-  description?: string;
-  project_id: string;
-  priority?: number;
-  type?: 'feature' | 'bug' | 'enhancement' | 'epic';
-  github_issue_number?: number;
-  github_issue_url?: string;
 }
 
 export interface RequirementWithDetails extends Requirement {
@@ -246,115 +152,105 @@ export interface CreateLinearConnectionRequest {
   project_id_linear?: string;
 }
 
-export interface UpdateLinearConnectionRequest {
-  workspace_id?: string;
-  team_id?: string;
+export interface LinearConnection {
+  id: string;
+  project_id: string;
+  api_token: string; // encrypted in storage
+  workspace_id: string;
+  team_id: string;
   board_id?: string;
   project_id_linear?: string;
-}
-
-export interface LinearConnectionValidationResult {
-  is_valid: boolean;
-  workspace?: {
-    id: string;
-    name: string;
-  };
-  team?: {
-    id: string;
-    name: string;
-  };
-  board?: {
-    id: string;
-    name: string;
-  };
-  project?: {
-    id: string;
-    name: string;
-  };
-  organization?: {
-    id: string;
-    name: string;
-  };
-  permissions?: string[];
-  error?: string;
-}
-
-export interface ProjectWithLinearConnection extends ProjectWithDetails {
-  linear_connection?: LinearConnection;
-}
-
-export interface CreateGitHubRepositoryRequest {
-  project_id: string;
-  github_repo_id: number;
-  owner: string;
-  name: string;
-  access_level?: 'read' | 'write' | 'admin';
-}
-
-export interface UpdateGitHubRepositoryRequest {
-  access_level?: 'read' | 'write' | 'admin';
-  webhook_configured?: boolean;
-}
-
-export interface ProjectWithRepository extends ProjectWithDetails {
-  github_repository?: GitHubRepository;
-}
-
-// Context source recommendation and selection types (B-603)
-export interface ContextSourceType {
-  id: string;
-  name: string;
-  description: string;
-  pattern: string; // File pattern or path
-  priority: number; // 1=highest, 5=lowest
-  category: 'documentation' | 'code' | 'config' | 'test';
-}
-
-export interface RecommendedContextSource {
-  id: string;
-  project_id: string;
-  source_type_id: string;
-  file_path: string;
-  file_size?: number;
-  last_modified?: Date;
-  confidence_score: number; // 0-100, how confident we are this is useful
-  is_recommended: boolean;
-  recommendation_reason?: string;
-}
-
-export interface SelectedContextSource {
-  id: string;
-  project_id: string;
-  source_type_id: string;
-  file_path: string;
-  is_selected: boolean;
-  selected_by: string; // user_id
-  selected_at: Date;
+  is_active: boolean;
+  last_sync_at?: Date;
+  sync_status?: 'pending' | 'syncing' | 'completed' | 'failed';
+  sync_error?: string;
   created_at: Date;
   updated_at: Date;
 }
 
-export interface ContextSourceRecommendation {
-  source_type: ContextSourceType;
-  files: RecommendedContextSource[];
-  total_size?: number;
-  recommendation_summary: string;
+export interface LinearIssue {
+  id: string;
+  linear_issue_id: string;
+  linear_connection_id: string;
+  ticket_candidate_id?: string;
+  requirement_id?: string;
+  title: string;
+  description?: string;
+  status: string;
+  priority: number;
+  assignee_id?: string;
+  assignee_name?: string;
+  labels: string[];
+  created_at: Date;
+  updated_at: Date;
+  synced_at: Date;
 }
 
-export interface ProjectContextAnalysis {
+export interface CreateRequirementRequest {
+  title: string;
+  description?: string;
   project_id: string;
-  github_repo_url: string;
-  analyzed_at: Date;
-  total_files_scanned: number;
-  recommendations: ContextSourceRecommendation[];
-  analysis_status: 'pending' | 'completed' | 'failed';
-  error_message?: string;
+  priority?: number;
+  type?: 'feature' | 'bug' | 'enhancement' | 'epic';
+  status?: 'draft' | 'active';
+  github_issue_number?: number;
+  github_issue_url?: string;
 }
 
-// Request/Response DTOs for context sources
-export interface AnalyzeProjectContextRequest {
+export interface UpdateRequirementRequest {
+  title?: string;
+  description?: string;
+  priority?: number;
+  type?: 'feature' | 'bug' | 'enhancement' | 'epic';
+  status?: 'draft' | 'active' | 'completed' | 'archived';
+  github_issue_number?: number;
+  github_issue_url?: string;
+}
+
+export interface ContextSource {
+  id: string;
   project_id: string;
-  force_refresh?: boolean;
+  source_type: 'github_repository' | 'file_upload' | 'manual_entry';
+  source_identifier: string; // Repository URL, file path, or manual identifier
+  name: string;
+  description?: string;
+  metadata: any; // JSON object with source-specific data
+  is_active: boolean;
+  last_indexed_at?: Date;
+  indexing_status: 'pending' | 'indexing' | 'completed' | 'failed';
+  indexing_error?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface ContextFile {
+  id: string;
+  context_source_id: string;
+  file_path: string;
+  file_content: string;
+  file_type: string;
+  file_size: number;
+  content_hash: string;
+  is_selected: boolean; // Whether this file is selected for context
+  last_modified_at: Date;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CreateContextSourceRequest {
+  project_id: string;
+  source_type: 'github_repository' | 'file_upload' | 'manual_entry';
+  source_identifier: string;
+  name: string;
+  description?: string;
+  metadata?: any;
+}
+
+export interface UpdateContextSourceRequest {
+  name?: string;
+  description?: string;
+  metadata?: any;
+  is_active?: boolean;
 }
 
 export interface UpdateContextSelectionRequest {
@@ -364,7 +260,6 @@ export interface UpdateContextSelectionRequest {
   }[];
 }
 
-<<<<<<< HEAD
 // AI Provider Audit interfaces (B-706)
 export interface AIProviderAudit {
   id: string;
@@ -413,7 +308,7 @@ export interface CreateAIProviderAuditRequest {
   latency_ms?: number;
   audit_level?: 'full' | 'metadata-only' | 'disabled';
   retention_policy?: 'standard' | 'extended' | 'minimal';
-  is_successful?: boolean;
+  is_successful: boolean;
   error_type?: string;
   error_message?: string;
   error_details?: any;
@@ -421,782 +316,248 @@ export interface CreateAIProviderAuditRequest {
   response_timestamp?: Date;
 }
 
-export interface AIProviderAuditSummary {
-  id: string;
-  requirement_id?: string;
-  user_id?: string;
-  provider_type: string;
-  provider_model?: string;
-  date_bucket: Date;
-  total_requests: number;
-  successful_requests: number;
-  failed_requests: number;
-  total_request_tokens: number;
-  total_response_tokens: number;
-  total_tokens: number;
-  avg_latency_ms: number;
-  min_latency_ms: number;
-  max_latency_ms: number;
-  error_types: string[];
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface AIProviderAuditQuery {
-  requirement_id?: string;
-  user_id?: string;
-  provider_type?: string;
-  provider_model?: string;
-  correlation_id?: string;
-  job_id?: string;
+export interface UpdateAIProviderAuditRequest {
+  response_payload?: any;
+  response_status?: number;
+  request_tokens?: number;
+  response_tokens?: number;
+  total_tokens?: number;
+  latency_ms?: number;
   is_successful?: boolean;
-  start_date?: Date;
-  end_date?: Date;
-  limit?: number;
-  offset?: number;
-  include_payloads?: boolean; // For security - default false
+  error_type?: string;
+  error_message?: string;
+  error_details?: any;
+  response_timestamp?: Date;
 }
 
-// Persona and Refinement Session types (B-301)
+// Refinement Session types
 export interface RefinementSession {
   id: string;
   requirement_id: string;
   user_id: string;
-  session_name?: string;
-  status: 'active' | 'completed' | 'archived';
-  session_metadata?: any;
+  title?: string;
+  description?: string;
+  status: 'active' | 'completed' | 'paused' | 'cancelled';
+  started_at: Date;
+  completed_at?: Date;
   created_at: Date;
   updated_at: Date;
+
+  // Legacy compatibility fields
+  session_name?: string;
+  session_metadata?: any;
 }
 
 export interface CreateRefinementSessionRequest {
   requirement_id: string;
+  title?: string;
+  description?: string;
+  status?: 'active' | 'completed' | 'paused' | 'cancelled';
+
+  // Legacy compatibility fields
   session_name?: string;
-  status?: 'active' | 'completed' | 'archived';
   session_metadata?: any;
 }
 
-export interface RefinementSessionWithDetails extends RefinementSession {
-  requirement: Requirement;
-  user: User;
+export interface UpdateRefinementSessionRequest {
+  title?: string;
+  description?: string;
+  status?: 'active' | 'completed' | 'paused' | 'cancelled';
 }
 
+export interface RefinementSessionWithDetails extends RefinementSession {
+  requirement: RequirementWithDetails;
+  user: User;
+  message_count?: number;
+}
+
+// Requirement message types (conversation in refinement sessions)
 export interface RefinementMessage {
   id: string;
   session_id: string;
   user_id: string;
-  message_type: 'user_message' | 'ai_response' | 'system_message';
+  message_type: 'user_message' | 'ai_response' | 'system_note' | 'clarification_request';
   content: string;
   message_metadata?: any;
   created_at: Date;
+  updated_at: Date;
 }
 
 export interface CreateRefinementMessageRequest {
   session_id: string;
-  message_type: 'user_message' | 'ai_response' | 'system_message';
+  message_type: 'user_message' | 'ai_response' | 'system_note' | 'clarification_request';
   content: string;
   message_metadata?: any;
 }
 
-export interface PersonaInvocation {
+export interface RequirementMessage {
   id: string;
   requirement_id: string;
   session_id: string;
-  user_id: string;
-  persona_name: string;
-  persona_type?: string;
-  persona_description?: string;
-  invocation_reason: string;
-  trigger_context?: any;
-  contributed_dimensions: any[];
-  dimension_summary?: string;
-  invocation_status: 'pending' | 'completed' | 'failed';
-  invocation_metadata?: any;
-  invoked_at: Date;
-  completed_at?: Date;
+  author_id?: string;
+  message_type: 'user_message' | 'ai_response' | 'system_note' | 'clarification_request';
+  content: string;
+  role?: 'user' | 'assistant' | 'system';
+  metadata?: any;
+  sequence_number: number;
+  parent_message_id?: string;
   created_at: Date;
   updated_at: Date;
 }
 
-// Persona progression types (B-302)
-export interface PersonaProgressionHistory {
-  id: string;
-  project_id: string;
-  user_id: string;
-
-  // Progression session metadata
+export interface CreateRequirementMessageRequest {
+  requirement_id: string;
   session_id: string;
-  session_type: 'refinement' | 'guidance' | 'validation' | 'selection' | 'custom';
-
-  // Specialist selection tracking
-  specialist_selected?: string;
-  specialist_reason?: string;
-  previous_specialists?: string[];
-
-  // Refinement outcome tracking
-  refinement_stage?: string;
-  refinement_outcome?: 'completed' | 'in_progress' | 'abandoned' | 'escalated';
-  outcome_data?: any;
-
-  // Progression context
-  current_persona_stack?: any;
-  progression_context?: any;
-
-  // Metrics and scoring
-  progression_score?: number;
-  time_spent_minutes?: number;
-  user_satisfaction?: number;
-
-  created_at: Date;
-  updated_at: Date;
+  message_type: 'user_message' | 'ai_response' | 'system_note' | 'clarification_request';
+  content: string;
+  role?: 'user' | 'assistant' | 'system';
+  metadata?: any;
+  parent_message_id?: string;
 }
 
-// Export batch system types (B-503, B-505, B-506)
-export interface ExportBatch {
+// Job system types
+export interface Job {
   id: string;
-  project_id: string;
-
-  // Batch metadata
-  type: 'github_issues' | 'linear_issues';
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'retrying';
-
-  // Export configuration
-  target_service: 'github' | 'linear';
-  target_config: Record<string, any>; // service-specific config
-
-  // Progress tracking
-  total_items: number;
-  processed_items: number;
-  failed_items: number;
-
-  // Retry configuration
+  job_type: string;
+  project_id?: string;
+  user_id?: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  payload: any;
+  result?: any;
+  error?: string;
+  priority: number; // Higher number = higher priority
   max_retries: number;
   retry_count: number;
-  retry_delay_seconds: number;
-
-  // Result tracking
-  results: Record<string, any>; // stores export results and errors
-  error_message?: string;
-
-  // Timing
+  retry_delay_ms: number;
+  scheduled_for?: Date;
   started_at?: Date;
   completed_at?: Date;
-  next_retry_at?: Date;
-
-  created_at: Date;
-  updated_at: Date;
-}
-
-<<<<<<< HEAD
-export interface ExportBatchItem {
-  id: string;
-  batch_id: string;
-
-  // Source item reference
-  source_type: 'requirement';
-  source_id: string;
-
-  // Export status
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'skipped';
-
-  // Retry tracking
-  retry_count: number;
-
-  // Results
-  external_id?: string; // e.g., GitHub issue number
-  external_url?: string; // e.g., GitHub issue URL
-  export_data: Record<string, any>; // exported data
-  error_message?: string;
-
-  // Timing
-  started_at?: Date;
-  completed_at?: Date;
-
-  created_at: Date;
-  updated_at: Date;
-}
-
-// Ticket types
-export interface Ticket {
-  id: string;
-  title: string;
-  description?: string;
-  project_id: string;
-  assignee_id?: string;
-  author_id: string;
-  priority: number; // 1=highest, 5=lowest
-  status: 'open' | 'in_progress' | 'completed' | 'closed' | 'cancelled';
-  type: 'bug' | 'feature' | 'task' | 'enhancement';
-  is_active: boolean;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface CreatePersonaInvocationRequest {
-  requirement_id: string;
-  session_id: string;
-  persona_name: string;
-  persona_type?: string;
-  persona_description?: string;
-  invocation_reason: string;
-  trigger_context?: any;
-  contributed_dimensions?: any[];
-  dimension_summary?: string;
-  invocation_metadata?: any;
-}
-
-export interface PersonaInvocationWithDetails extends PersonaInvocation {
-  requirement: Requirement;
-  session: RefinementSession;
-  user: User;
-}
-
-export interface PersonaDimensionContribution {
-  id: string;
-  invocation_id: string;
-  dimension_category: string;
-  dimension_name: string;
-  dimension_value?: string;
-  confidence_score?: number;
-  contribution_type?: 'addition' | 'modification' | 'validation' | 'concern';
-  impact_level?: 'low' | 'medium' | 'high' | 'critical';
-  rationale?: string;
-  created_at: Date;
-}
-
-// Persona Orchestration types (B-302)
-export interface PersonaOrchestrationRule {
-  id: string;
-  rule_name: string;
-  rule_type: 'progression' | 'trigger' | 'sequence' | 'conditional';
-  description?: string;
-  conditions: PersonaRuleCondition[];
-  actions: PersonaRuleAction[];
-  priority: number; // 1=highest, 5=lowest
-  is_active: boolean;
-  created_at: Date;
-  updated_at: Date;
-}
-
-// B-306: Readiness Gate Override Types
-export interface ReadinessGateOverride {
-  id: string;
-  requirement_id: string;
-  user_id: string;
-  dimension_id: string;
-  dimension_name: string;
-  override_reason: string;
-  original_score: number;
-  override_score: number;
-  override_type: 'manual' | 'automatic' | 'persona_rule';
   expires_at?: Date;
-  is_active: boolean;
   created_at: Date;
   updated_at: Date;
 }
 
-export interface ReadinessGateOverrideWithUser extends ReadinessGateOverride {
-  user: User;
-}
-
-export interface PersonaProgressionGate {
-  id: string;
-  project_id: string;
-  gate_name: string;
-  gate_description?: string;
-  required_dimensions: string[];
-  minimum_score: number;
-  allow_overrides: boolean;
-  persona_type?: string;
-  gate_order: number;
-  is_active: boolean;
-  created_at: Date;
-  updated_at: Date;
-}
-
-// Advanced ticket workflow types (B-404, B-405, B-406, B-407)
-export interface RequirementComment {
-  id: string;
-  requirement_id: string;
-  author_id: string;
-  content: string;
-  comment_type: 'comment' | 'status_change' | 'assignment_change' | 'priority_change';
-  metadata?: any;
-  is_internal: boolean;
-  created_at: Date;
-  updated_at: Date;
-}
-
-<<<<<<< HEAD
-export interface CreatePersonaProgressionRequest {
-  project_id: string;
-  session_id: string;
-  session_type?: 'refinement' | 'guidance' | 'validation' | 'selection' | 'custom';
-  specialist_selected?: string;
-  specialist_reason?: string;
-  previous_specialists?: string[];
-  refinement_stage?: string;
-  refinement_outcome?: 'completed' | 'in_progress' | 'abandoned' | 'escalated';
-  outcome_data?: any;
-  current_persona_stack?: any;
-  progression_context?: any;
-  progression_score?: number;
-  time_spent_minutes?: number;
-  user_satisfaction?: number;
-}
-
-export interface UpdatePersonaProgressionRequest {
-  specialist_selected?: string;
-  specialist_reason?: string;
-  previous_specialists?: string[];
-  refinement_stage?: string;
-  refinement_outcome?: 'completed' | 'in_progress' | 'abandoned' | 'escalated';
-  outcome_data?: any;
-  current_persona_stack?: any;
-  progression_context?: any;
-  progression_score?: number;
-  time_spent_minutes?: number;
-  user_satisfaction?: number;
-}
-
-export interface PersonaProgressionSession {
-  session_id: string;
-  project_id: string;
-  user_id: string;
-  session_type: string;
-  history: PersonaProgressionHistory[];
-  current_specialist?: string;
-  progression_stats: {
-    total_steps: number;
-    completed_steps: number;
-    average_score?: number;
-    total_time_minutes: number;
-  };
-  started_at: Date;
-  last_activity: Date;
-}
-
-export interface PersonaProgressionAnalytics {
-  project_id: string;
-  total_sessions: number;
-  completion_rate: number;
-  average_session_duration: number;
-  most_used_specialists: Array<{
-    specialist: string;
-    usage_count: number;
-    success_rate: number;
-  }>;
-  progression_trends: Array<{
-    stage: string;
-    average_score: number;
-    completion_rate: number;
-  }>;
-}
-
-export interface CreateTicketRequest {
-  title: string;
-  description?: string;
-  project_id: string;
-  assignee_id?: string;
-  priority?: number;
-  type?: 'bug' | 'feature' | 'task' | 'enhancement';
-}
-
-export interface TicketWithDetails extends Ticket {
-  project: Project;
-  author: User;
-  assignee?: User;
-}
-
-export interface RequirementCommentWithAuthor extends RequirementComment {
-  author: User;
-}
-
-export interface RequirementHistory {
-  id: string;
-  requirement_id: string;
-  changed_by: string;
-  field_name: string;
-  old_value?: string;
-  new_value?: string;
-  change_reason?: string;
-  created_at: Date;
-}
-
-export interface RequirementHistoryWithUser extends RequirementHistory {
-  user: User;
-}
-
-export interface RequirementWatcher {
-  id: string;
-  requirement_id: string;
-  user_id: string;
-  watch_type: 'all' | 'mentions' | 'status_changes';
-  created_at: Date;
-}
-
-export interface RequirementWatcherWithUser extends RequirementWatcher {
-  user: User;
-}
-
-export interface RequirementDependency {
-  id: string;
-  requirement_id: string;
-  dependency_id: string;
-  dependency_type: 'blocks' | 'relates_to' | 'duplicate_of';
-  created_by: string;
-  created_at: Date;
-}
-
-export interface RequirementDependencyWithDetails extends RequirementDependency {
-  dependency: Requirement;
-  created_by_user: User;
-}
-
-// Extended requirement with full details for workflow management
-export interface RequirementWorkflowDetails extends RequirementWithDetails {
-  assignee?: User;
-  assigned_by_user?: User;
-  comments: RequirementCommentWithAuthor[];
-  watchers: RequirementWatcherWithUser[];
-  dependencies: RequirementDependencyWithDetails[];
-  blocking: RequirementDependencyWithDetails[]; // Requirements this one blocks
-  history: RequirementHistoryWithUser[];
-}
-
-// Request DTOs for advanced workflow features
-export interface CreateRequirementCommentRequest {
-  content: string;
-  comment_type?: 'comment' | 'status_change' | 'assignment_change' | 'priority_change';
-  is_internal?: boolean;
-  metadata?: any;
-}
-
-export interface UpdateRequirementAssignmentRequest {
-  assignee_id?: string;
-  change_reason?: string;
-}
-
-export interface UpdateRequirementStatusRequest {
-  status: 'draft' | 'open' | 'in_progress' | 'in_review' | 'testing' | 'blocked' | 'completed' | 'archived' | 'cancelled';
-  resolution?: 'done' | 'wont_fix' | 'duplicate' | 'invalid';
-  resolution_notes?: string;
-  change_reason?: string;
-}
-
-export interface UpdateRequirementPriorityRequest {
-  priority?: number;
-  priority_label?: 'critical' | 'high' | 'medium' | 'low' | 'backlog';
-  urgency_score?: number;
-  due_date?: string; // ISO date string
-  change_reason?: string;
-}
-
-export interface UpdateRequirementLifecycleRequest {
-  estimated_hours?: number;
-  actual_hours?: number;
-  story_points?: number;
-  labels?: string[];
-  metadata?: any;
-}
-
-export interface CreateRequirementDependencyRequest {
-  dependency_id: string;
-  dependency_type: 'blocks' | 'relates_to' | 'duplicate_of';
-}
-
-export interface AddRequirementWatcherRequest {
-  watch_type?: 'all' | 'mentions' | 'status_changes';
-}
-
-// Enhanced requirement creation request with new fields
-export interface CreateRequirementAdvancedRequest extends CreateRequirementRequest {
-  assignee_id?: string;
-  priority_label?: 'critical' | 'high' | 'medium' | 'low' | 'backlog';
-  due_date?: string;
-  estimated_hours?: number;
-  story_points?: number;
-  labels?: string[];
-  watchers?: string[]; // User IDs to automatically watch this requirement
-  metadata?: any;
-}
-
-// Request/Response DTOs for readiness gate overrides
-export interface CreateReadinessGateOverrideRequest {
-  requirement_id: string;
-  dimension_id: string;
-  dimension_name: string;
-  override_reason: string;
-  original_score?: number;
-  override_score?: number;
-  override_type?: 'manual' | 'automatic' | 'persona_rule';
-  expires_at?: Date;
-}
-
-export interface UpdateReadinessGateOverrideRequest {
-  override_reason?: string;
-  override_score?: number;
-  expires_at?: Date;
-  is_active?: boolean;
-}
-
-export interface CreatePersonaProgressionGateRequest {
-  project_id: string;
-  gate_name: string;
-  gate_description?: string;
-  required_dimensions?: string[];
-  minimum_score?: number;
-  allow_overrides?: boolean;
-  persona_type?: string;
-  gate_order?: number;
-}
-
-export interface UpdatePersonaProgressionGateRequest {
-  gate_name?: string;
-  gate_description?: string;
-  required_dimensions?: string[];
-  minimum_score?: number;
-  allow_overrides?: boolean;
-  persona_type?: string;
-  gate_order?: number;
-  is_active?: boolean;
-}
-
-// Request/Response DTOs for export batches
-export interface CreateExportBatchRequest {
-  project_id: string;
-  type: 'github_issues' | 'linear_issues';
-  target_service: 'github' | 'linear';
-  target_config: Record<string, any>;
-  requirement_ids?: string[]; // If specified, only export these requirements
-  max_retries?: number;
-  retry_delay_seconds?: number;
-}
-
-export interface ExportBatchProgress {
-  batch_id: string;
-  status: string;
-  progress: {
-    total_items: number;
-    processed_items: number;
-    failed_items: number;
-    percentage: number;
-  };
-  current_item?: string;
-  estimated_completion?: Date;
-}
-
-export interface GitHubExportConfig {
-  repository: {
-    owner: string;
-    name: string;
-  };
-  labels?: string[];
-  assignees?: string[];
-  milestone?: string;
-  template?: {
-    title_prefix?: string;
-    body_template?: string;
-  };
-}
-
-export interface LinearExportConfig {
-  workspace_id: string;
-  team_id: string;
+export interface CreateJobRequest {
+  job_type: string;
   project_id?: string;
-  labels?: string[];
-  assignee_id?: string;
-  template?: {
-    title_prefix?: string;
-    description_template?: string;
-  };
+  payload: any;
+  priority?: number;
+  max_retries?: number;
+  retry_delay_ms?: number;
+  scheduled_for?: Date;
+  expires_at?: Date;
 }
 
-export interface PersonaRuleCondition {
-  condition_type: 'persona_invoked' | 'dimension_contributed' | 'session_status' | 'requirement_status' | 'user_action' | 'time_elapsed';
-  condition_data: any; // Flexible JSON for condition-specific data
-  operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains' | 'not_contains' | 'exists' | 'not_exists';
-  expected_value?: any;
+export interface UpdateJobRequest {
+  status?: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  result?: any;
+  error?: string;
+  retry_count?: number;
+  started_at?: Date;
+  completed_at?: Date;
 }
 
-export interface PersonaRuleAction {
-  action_type: 'invoke_persona' | 'update_session' | 'send_notification' | 'update_requirement' | 'create_task';
-  action_data: any; // Flexible JSON for action-specific data
-  delay_seconds?: number; // Optional delay before executing action
-}
-
-// Persona Orchestration types for default progression (B-302)
+// Persona types from persona progression service
 export interface PersonaType {
   id: string;
   name: string;
   description: string;
-  category: string;
+  systemPrompt: string;
   capabilities: string[];
+  triggers: PersonaTrigger[];
+  parameters: PersonaParameter[];
 }
 
-export interface RequirementReadinessState {
-  requirement_id: string;
-  overall_readiness: 'not_started' | 'initial' | 'developing' | 'ready' | 'completed';
-  readiness_dimensions: ReadinessDimension[];
-  gaps_identified: ReadinessGap[];
-  last_assessed_at: Date;
+export interface PersonaTrigger {
+  event: string;
+  condition?: string;
+  priority: number;
 }
 
-export interface ReadinessDimension {
-  dimension_name: string;
-  dimension_category: 'scope' | 'acceptance_criteria' | 'technical_clarity' | 'dependencies' | 'user_impact';
-  current_state: 'missing' | 'draft' | 'partial' | 'complete';
-  confidence_score: number; // 0-100
-  last_contributed_by?: string; // persona that last contributed
-  contribution_timestamp?: Date;
-}
-
-export interface ReadinessGap {
-  gap_type: string;
-  gap_description: string;
-  suggested_persona_types: string[];
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  estimated_effort: 'small' | 'medium' | 'large';
-}
-
-// Orchestration configuration (for rule-based automation)
-export interface PersonaOrchestrationConfig {
-  id: string;
-  progression_name: string;
-  description?: string;
-  default_sequence: string[]; // Array of persona types in order
-  rules: PersonaOrchestrationRule[];
-  is_default: boolean;
-  created_at: Date;
-  updated_at: Date;
-}
-
-// Progression configuration (for recommendations)
-export interface PersonaProgressionConfig {
-  id: string;
+export interface PersonaParameter {
   name: string;
-  description?: string;
-  is_default: boolean;
-  progression_rules: PersonaProgressionRule[];
-  created_at: Date;
-  updated_at: Date;
+  type: 'string' | 'number' | 'boolean' | 'object';
+  required: boolean;
+  description: string;
+  defaultValue?: any;
 }
 
-export interface PersonaOrchestrationExecution {
-  id: string;
-  rule_id: string;
-  requirement_id?: string;
-  session_id?: string;
-  user_id?: string;
-  trigger_event: string;
-  trigger_data?: any;
-  execution_status: 'pending' | 'executing' | 'completed' | 'failed';
-  actions_executed: PersonaExecutedAction[];
-  execution_metadata?: any;
-  started_at: Date;
-  completed_at?: Date;
-  error_message?: string;
-}
-
-export interface PersonaExecutedAction {
-  action_type: string;
-  action_data: any;
-  execution_status: 'pending' | 'completed' | 'failed';
-  executed_at?: Date;
-  error_message?: string;
-  result_data?: any;
-}
-
-// Request/Response DTOs for orchestration
-export interface CreateOrchestrationRuleRequest {
-  rule_name: string;
-  rule_type: 'progression' | 'trigger' | 'sequence' | 'conditional';
-  description?: string;
-  conditions: PersonaRuleCondition[];
-  actions: PersonaRuleAction[];
-  priority?: number;
-}
-
-export interface UpdateOrchestrationRuleRequest {
-  rule_name?: string;
-  description?: string;
-  conditions?: PersonaRuleCondition[];
-  actions?: PersonaRuleAction[];
-  priority?: number;
-  is_active?: boolean;
-}
-
-export interface CreateOrchestrationConfigRequest {
-  progression_name: string;
-  description?: string;
-  default_sequence: string[];
-  is_default?: boolean;
-}
-
-export interface TriggerOrchestrationRequest {
-  trigger_event: string;
-  trigger_data?: any;
-  requirement_id?: string;
-  session_id?: string;
-}
-
-export interface PersonaProgressionRule {
-  rule_name: string;
-  condition: {
-    readiness_state?: string;
-    missing_dimensions?: string[];
-    gap_types?: string[];
-    priority_threshold?: string;
-  };
-  recommended_persona: {
-    persona_type: string;
-    persona_name?: string;
-    invocation_reason: string;
-    expected_contributions: string[];
-  };
-  priority: number; // 1=highest priority rule
+export interface PersonaStack {
+  personas: PersonaType[];
+  context?: any;
+  metadata?: any;
 }
 
 export interface PersonaRecommendation {
-  requirement_id: string;
-  session_id?: string;
-  recommended_persona: {
-    persona_type: string;
-    persona_name: string;
-    invocation_reason: string;
-    expected_contributions: string[];
-    confidence_score: number; // 0-100
-  };
-  readiness_analysis: {
-    current_state: RequirementReadinessState;
-    primary_gaps: ReadinessGap[];
-    progression_rationale: string;
-  };
-  alternative_personas?: {
-    persona_type: string;
-    persona_name: string;
-    reason: string;
-    confidence_score: number;
-  }[];
-  generated_at: Date;
+  persona: PersonaType;
+  confidence: number;
+  reasoning: string;
+  metadata?: any;
 }
 
-// Request/Response DTOs for recommendations
-export interface GetPersonaRecommendationRequest {
-  requirement_id: string;
-  session_id?: string;
-  current_context?: any;
+export interface PersonaProgressionHistory {
+  id: string;
+  project_id: string;
+  user_id: string;
+  session_id: string;
+  session_type: string;
+  specialist_selected?: string;
+  specialist_reason?: string;
+  previous_specialists?: string[];
+  refinement_stage?: string;
+  refinement_outcome?: string;
+  outcome_data?: any;
+  current_persona_stack?: any;
+  progression_context?: any;
+  progression_score?: number;
+  time_spent_minutes?: number;
+  user_satisfaction?: number;
+  created_at: Date;
+  updated_at: Date;
 }
 
-export interface PersonaRecommendationResponse {
-  recommendation: PersonaRecommendation | null;
-  fallback_reason?: string;
+export interface CreatePersonaProgressionHistoryRequest {
+  session_id: string;
+  session_type?: string;
+  specialist_selected?: string;
+  specialist_reason?: string;
+  previous_specialists?: string[];
+  refinement_stage?: string;
+  refinement_outcome?: string;
+  outcome_data?: any;
+  current_persona_stack?: any;
+  progression_context?: any;
+  progression_score?: number;
+  time_spent_minutes?: number;
+  user_satisfaction?: number;
+}
+
+// Common response wrappers
+export interface APIResponse<T = any> {
+  success: boolean;
+  data?: T;
   error?: string;
+  message?: string;
+  timestamp: string;
 }
 
-export interface CreateProgressionConfigRequest {
-  name: string;
-  description?: string;
-  progression_rules: PersonaProgressionRule[];
-  is_default?: boolean;
+export interface PaginatedResponse<T = any> extends APIResponse<T[]> {
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+// Health check and monitoring
+export interface HealthCheck {
+  status: 'healthy' | 'unhealthy' | 'degraded';
+  timestamp: string;
+  services: {
+    database: 'up' | 'down';
+    ai_provider: 'up' | 'down';
+    external_apis: 'up' | 'down';
+  };
+  version: string;
 }

@@ -1,318 +1,392 @@
-import { Router, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import { requireAuth } from '../config/auth';
 import { RefinementSessionModel, RefinementMessageModel } from '../models/RefinementSession';
 import { RequirementModel } from '../models/Requirement';
-import { CreateRefinementSessionRequest, CreateRefinementMessageRequest } from '../models/types';
-import { User } from '../models/types';
+import {
+  CreateRefinementSessionRequest,
+  UpdateRefinementSessionRequest,
+  CreateRefinementMessageRequest,
+  User
+} from '../models/types';
 
-const router = Router();
+const router = express.Router();
 
 // All refinement session routes require authentication
 router.use(requireAuth);
 
-// Get user's refinement sessions (across all projects they have access to)
+/**
+ * GET /refinement-sessions
+ * Get all refinement sessions accessible to the current user
+ */
 router.get('/', async (req: Request, res: Response) => {
   try {
     const user = req.user as User;
-    const sessions = await RefinementSessionModel.findByUserId(user.id);
+
+    // Get sessions accessible to the user (via workspace membership)
+    const sessions = await RefinementSessionModel.findAccessibleByUser(user.id);
 
     res.json({
-      sessions,
+      success: true,
+      data: sessions,
       total: sessions.length
     });
   } catch (error) {
     console.error('Error fetching refinement sessions:', error);
     res.status(500).json({
+      success: false,
       error: 'Internal Server Error',
       message: 'Failed to fetch refinement sessions'
     });
   }
 });
 
-// Get refinement sessions for a specific requirement
-router.get('/requirement/:requirementId', async (req: Request, res: Response) => {
+/**
+ * GET /refinement-sessions/by-requirement/:requirementId
+ * Get all refinement sessions for a specific requirement
+ */
+router.get('/by-requirement/:requirementId', async (req: Request, res: Response) => {
   try {
-    const user = req.user as User;
     const { requirementId } = req.params;
+    const user = req.user as User;
 
-    // Check if user has access to this requirement
-    const hasAccess = await RequirementModel.canUserAccess(requirementId, user.id);
-    if (!hasAccess) {
+    // Verify user can access this requirement
+    const requirement = await RequirementModel.findById(requirementId);
+    if (!requirement) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Requirement not found'
+      });
+    }
+
+    const canAccess = await RequirementModel.canUserAccess(requirementId, user.id);
+    if (!canAccess) {
       return res.status(403).json({
-        error: 'Access Denied',
-        message: 'You do not have access to this requirement'
+        success: false,
+        error: 'Forbidden',
+        message: 'Access denied to this requirement'
       });
     }
 
     const sessions = await RefinementSessionModel.findByRequirementId(requirementId);
 
     res.json({
-      sessions,
-      requirement_id: requirementId,
-      total: sessions.length
+      success: true,
+      data: sessions
     });
   } catch (error) {
     console.error('Error fetching requirement refinement sessions:', error);
     res.status(500).json({
+      success: false,
       error: 'Internal Server Error',
-      message: 'Failed to fetch requirement refinement sessions'
+      message: 'Failed to fetch refinement sessions'
     });
   }
 });
 
-// Create new refinement session
-router.post('/', async (req: Request, res: Response) => {
-  try {
-    const user = req.user as User;
-    const data: CreateRefinementSessionRequest = req.body;
-
-    // Basic validation
-    if (!data.requirement_id) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'requirement_id is required'
-      });
-    }
-
-    // Check if user has access to the requirement
-    const hasAccess = await RequirementModel.canUserAccess(data.requirement_id, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({
-        error: 'Access Denied',
-        message: 'You do not have access to this requirement'
-      });
-    }
-
-    // Clean up data
-    const cleanData: CreateRefinementSessionRequest = {
-      requirement_id: data.requirement_id,
-      session_name: data.session_name?.trim(),
-      status: data.status || 'active',
-      session_metadata: data.session_metadata || {}
-    };
-
-    const session = await RefinementSessionModel.create(cleanData, user.id);
-
-    // Return session with full details
-    const sessionWithDetails = await RefinementSessionModel.findByIdWithDetails(session.id);
-
-    res.status(201).json({
-      session: sessionWithDetails,
-      message: 'Refinement session created successfully'
-    });
-  } catch (error) {
-    console.error('Error creating refinement session:', error);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to create refinement session'
-    });
-  }
-});
-
-// Get specific refinement session
+/**
+ * GET /refinement-sessions/:id
+ * Get a specific refinement session by ID
+ */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const user = req.user as User;
     const { id } = req.params;
+    const user = req.user as User;
 
-    // Check if user has access to this session
-    const hasAccess = await RefinementSessionModel.canUserAccess(id, user.id);
-    if (!hasAccess) {
+    // Check if user can access this session
+    const canAccess = await RefinementSessionModel.canUserAccess(id, user.id);
+    if (!canAccess) {
       return res.status(403).json({
-        error: 'Access Denied',
-        message: 'You do not have access to this refinement session'
+        success: false,
+        error: 'Forbidden',
+        message: 'Access denied to this refinement session'
       });
     }
 
     const session = await RefinementSessionModel.findByIdWithDetails(id);
     if (!session) {
       return res.status(404).json({
+        success: false,
         error: 'Not Found',
         message: 'Refinement session not found'
       });
     }
 
     res.json({
-      session
+      success: true,
+      data: session
     });
   } catch (error) {
     console.error('Error fetching refinement session:', error);
     res.status(500).json({
+      success: false,
       error: 'Internal Server Error',
       message: 'Failed to fetch refinement session'
     });
   }
 });
 
-// Update refinement session
-router.put('/:id', async (req: Request, res: Response) => {
+/**
+ * POST /refinement-sessions
+ * Create a new refinement session
+ */
+router.post('/', async (req: Request, res: Response) => {
   try {
     const user = req.user as User;
-    const { id } = req.params;
-    const data: Partial<CreateRefinementSessionRequest> = req.body;
+    const sessionData: CreateRefinementSessionRequest = req.body;
 
-    // Check if user has access to this session
-    const hasAccess = await RefinementSessionModel.canUserAccess(id, user.id);
-    if (!hasAccess) {
-      return res.status(403).json({
-        error: 'Access Denied',
-        message: 'You do not have access to this refinement session'
+    // Validate required fields
+    if (!sessionData.requirement_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bad Request',
+        message: 'requirement_id is required'
       });
     }
 
-    // Clean up data
-    if (data.session_name) data.session_name = data.session_name.trim();
+    // Verify user can access the requirement
+    const canAccess = await RequirementModel.canUserAccess(sessionData.requirement_id, user.id);
+    if (!canAccess) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: 'Access denied to this requirement'
+      });
+    }
 
-    const session = await RefinementSessionModel.update(id, data);
-    if (!session) {
+    // Verify requirement exists
+    const requirement = await RequirementModel.findById(sessionData.requirement_id);
+    if (!requirement) {
       return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Requirement not found'
+      });
+    }
+
+    // Create the session
+    const session = await RefinementSessionModel.create(sessionData, user.id);
+
+    // Fetch the session with full details
+    const sessionWithDetails = await RefinementSessionModel.findByIdWithDetails(session.id);
+
+    res.status(201).json({
+      success: true,
+      data: sessionWithDetails
+    });
+  } catch (error) {
+    console.error('Error creating refinement session:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+      message: 'Failed to create refinement session'
+    });
+  }
+});
+
+/**
+ * PUT /refinement-sessions/:id
+ * Update a refinement session
+ */
+router.put('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = req.user as User;
+    const updateData: UpdateRefinementSessionRequest = req.body;
+
+    // Check if user can access this session
+    const canAccess = await RefinementSessionModel.canUserAccess(id, user.id);
+    if (!canAccess) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: 'Access denied to this refinement session'
+      });
+    }
+
+    // Check if user is the owner (only owners can update)
+    const isOwner = await RefinementSessionModel.isUserOwner(id, user.id);
+    if (!isOwner) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: 'Only the session owner can update this session'
+      });
+    }
+
+    // Update the session
+    const updatedSession = await RefinementSessionModel.update(id, updateData);
+    if (!updatedSession) {
+      return res.status(404).json({
+        success: false,
         error: 'Not Found',
         message: 'Refinement session not found'
       });
     }
 
-    // Return updated session with full details
-    const sessionWithDetails = await RefinementSessionModel.findByIdWithDetails(session.id);
+    // Fetch with full details
+    const sessionWithDetails = await RefinementSessionModel.findByIdWithDetails(id);
 
     res.json({
-      session: sessionWithDetails,
-      message: 'Refinement session updated successfully'
+      success: true,
+      data: sessionWithDetails
     });
   } catch (error) {
     console.error('Error updating refinement session:', error);
     res.status(500).json({
+      success: false,
       error: 'Internal Server Error',
       message: 'Failed to update refinement session'
     });
   }
 });
 
-// Update refinement session status
-router.patch('/:id/status', async (req: Request, res: Response) => {
+/**
+ * DELETE /refinement-sessions/:id
+ * Delete a refinement session
+ */
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const user = req.user as User;
     const { id } = req.params;
-    const { status } = req.body;
+    const user = req.user as User;
 
-    if (!['active', 'completed', 'archived'].includes(status)) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Invalid status. Must be active, completed, or archived'
-      });
-    }
-
-    // Check if user has access to this session
-    const hasAccess = await RefinementSessionModel.canUserAccess(id, user.id);
-    if (!hasAccess) {
+    // Check if user is the owner (only owners can delete)
+    const isOwner = await RefinementSessionModel.isUserOwner(id, user.id);
+    if (!isOwner) {
       return res.status(403).json({
-        error: 'Access Denied',
-        message: 'You do not have access to this refinement session'
+        success: false,
+        error: 'Forbidden',
+        message: 'Only the session owner can delete this session'
       });
     }
 
-    const session = await RefinementSessionModel.updateStatus(id, status);
-    if (!session) {
+    const success = await RefinementSessionModel.delete(id);
+    if (!success) {
       return res.status(404).json({
+        success: false,
         error: 'Not Found',
         message: 'Refinement session not found'
       });
     }
 
     res.json({
-      session,
-      message: `Refinement session status updated to ${status} successfully`
+      success: true,
+      message: 'Refinement session deleted successfully'
     });
   } catch (error) {
-    console.error('Error updating refinement session status:', error);
+    console.error('Error deleting refinement session:', error);
     res.status(500).json({
+      success: false,
       error: 'Internal Server Error',
-      message: 'Failed to update refinement session status'
+      message: 'Failed to delete refinement session'
     });
   }
 });
 
-// Get messages for a refinement session
+/**
+ * GET /refinement-sessions/:id/messages
+ * Get all messages for a refinement session
+ */
 router.get('/:id/messages', async (req: Request, res: Response) => {
   try {
-    const user = req.user as User;
     const { id } = req.params;
+    const user = req.user as User;
 
-    // Check if user has access to this session
-    const hasAccess = await RefinementSessionModel.canUserAccess(id, user.id);
-    if (!hasAccess) {
+    // Check if user can access this session
+    const canAccess = await RefinementSessionModel.canUserAccess(id, user.id);
+    if (!canAccess) {
       return res.status(403).json({
-        error: 'Access Denied',
-        message: 'You do not have access to this refinement session'
+        success: false,
+        error: 'Forbidden',
+        message: 'Access denied to this refinement session'
       });
     }
 
     const messages = await RefinementMessageModel.findBySessionIdWithUsers(id);
 
     res.json({
-      messages,
-      session_id: id,
-      total: messages.length
+      success: true,
+      data: messages
     });
   } catch (error) {
-    console.error('Error fetching refinement session messages:', error);
+    console.error('Error fetching refinement messages:', error);
     res.status(500).json({
+      success: false,
       error: 'Internal Server Error',
-      message: 'Failed to fetch refinement session messages'
+      message: 'Failed to fetch refinement messages'
     });
   }
 });
 
-// Add message to refinement session
+/**
+ * POST /refinement-sessions/:id/messages
+ * Add a message to a refinement session
+ */
 router.post('/:id/messages', async (req: Request, res: Response) => {
   try {
-    const user = req.user as User;
     const { id } = req.params;
-    const data: CreateRefinementMessageRequest = req.body;
+    const user = req.user as User;
+    const messageData: CreateRefinementMessageRequest = req.body;
 
-    // Check if user has access to this session
-    const hasAccess = await RefinementSessionModel.canUserAccess(id, user.id);
-    if (!hasAccess) {
+    // Check if user can access this session
+    const canAccess = await RefinementSessionModel.canUserAccess(id, user.id);
+    if (!canAccess) {
       return res.status(403).json({
-        error: 'Access Denied',
-        message: 'You do not have access to this refinement session'
+        success: false,
+        error: 'Forbidden',
+        message: 'Access denied to this refinement session'
       });
     }
 
-    // Basic validation
-    if (!data.message_type || !data.content) {
+    // Validate required fields
+    if (!messageData.content || !messageData.message_type) {
       return res.status(400).json({
-        error: 'Validation Error',
-        message: 'message_type and content are required'
+        success: false,
+        error: 'Bad Request',
+        message: 'content and message_type are required'
       });
     }
 
-    if (!['user_message', 'ai_response', 'system_message'].includes(data.message_type)) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Invalid message_type. Must be user_message, ai_response, or system_message'
-      });
-    }
+    // Set the session_id from the URL parameter
+    messageData.session_id = id;
 
-    // Clean up data
-    const cleanData: CreateRefinementMessageRequest = {
-      session_id: id,
-      message_type: data.message_type,
-      content: data.content.trim(),
-      message_metadata: data.message_metadata || {}
-    };
-
-    const message = await RefinementMessageModel.create(cleanData, user.id);
+    // Create the message
+    const message = await RefinementMessageModel.create(messageData, user.id);
 
     res.status(201).json({
-      message,
-      session_id: id,
-      message: 'Refinement message created successfully'
+      success: true,
+      data: message
     });
   } catch (error) {
     console.error('Error creating refinement message:', error);
     res.status(500).json({
+      success: false,
       error: 'Internal Server Error',
       message: 'Failed to create refinement message'
+    });
+  }
+});
+
+/**
+ * GET /refinement-sessions/my/sessions
+ * Get refinement sessions created by the current user
+ */
+router.get('/my/sessions', async (req: Request, res: Response) => {
+  try {
+    const user = req.user as User;
+    const sessions = await RefinementSessionModel.findByUserId(user.id);
+
+    res.json({
+      success: true,
+      data: sessions,
+      total: sessions.length
+    });
+  } catch (error) {
+    console.error('Error fetching user refinement sessions:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+      message: 'Failed to fetch user refinement sessions'
     });
   }
 });
