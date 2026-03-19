@@ -58,6 +58,22 @@ export const requirements = pgTable('requirements', {
 });
 
 // Context snapshots table for B-601: Repository context models and analysis
+// Ticket Candidates table
+export const ticketCandidates = pgTable("ticket_candidates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  requirementId: uuid("requirement_id").notNull().references(() => requirements.id),
+  authorId: uuid("author_id").notNull().references(() => users.id),
+  priority: integer("priority").notNull().default(3),
+  status: varchar("status", { length: 50 }).notNull().default("draft"),
+  orderIndex: integer("order_index").notNull().default(0),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+
 export const contextSnapshots = pgTable('context_snapshots', {
   id: uuid('id').defaultRandom().primaryKey(),
   projectId: uuid('project_id').notNull().references(() => projects.id),
@@ -133,7 +149,8 @@ export const ticketCandidatesRelations = relations(ticketCandidates, ({ one }) =
   }),
 }));
 
-export const contextSnapshotsRelations = relations(contextSnapshots, ({ one, many }) => ({
+export const contextSnapshotsRelations = relations(ticketCandidates,
+  contextSnapshots, ({ one, many }) => ({
   project: one(projects, {
     fields: [contextSnapshots.projectId],
     references: [projects.id],
@@ -142,7 +159,8 @@ export const contextSnapshotsRelations = relations(contextSnapshots, ({ one, man
 }));
 
 export const contextChangesRelations = relations(contextChanges, ({ one }) => ({
-  snapshot: one(contextSnapshots, {
+  snapshot: one(ticketCandidates,
+  contextSnapshots, {
     fields: [contextChanges.snapshotId],
     references: [contextSnapshots.id],
   }),
@@ -158,12 +176,14 @@ export const schema = {
   workspaces,
   projects,
   requirements,
+  ticketCandidates,
   contextSnapshots,
   contextChanges,
   usersRelations,
   workspacesRelations,
   projectsRelations,
   requirementsRelations,
+  ticketCandidatesRelations,
   contextSnapshotsRelations,
   contextChangesRelations,
 };
