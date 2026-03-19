@@ -6,6 +6,7 @@ import { RequirementHistoryModel } from '../models/RequirementHistory';
 import { RequirementWatcherModel } from '../models/RequirementWatcher';
 import { RequirementDependencyModel } from '../models/RequirementDependency';
 import { ProjectModel } from '../models/Project';
+import { SecretManager } from '../services/SecretManager';
 import {
   CreateRequirementRequest,
   CreateRequirementAdvancedRequest,
@@ -35,7 +36,7 @@ router.get('/', async (req: Request, res: Response) => {
       total: requirements.length
     });
   } catch (error) {
-    console.error('Error fetching requirements:', error);
+    console.error('[REQUIREMENT_ROUTES] Error fetching requirements:', SecretManager.redactSensitiveData(error));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch requirements'
@@ -66,7 +67,7 @@ router.get('/project/:projectId', async (req: Request, res: Response) => {
       total: requirements.length
     });
   } catch (error) {
-    console.error('Error fetching project requirements:', error);
+    console.error('[REQUIREMENT_ROUTES] Error fetching project requirements:', SecretManager.redactSensitiveData(error));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch project requirements'
@@ -148,7 +149,10 @@ router.post('/', async (req: Request, res: Response) => {
       message: 'Requirement created successfully'
     });
   } catch (error) {
-    console.error('Error creating requirement:', error);
+    console.error('[REQUIREMENT_ROUTES] Error creating requirement:', SecretManager.redactSensitiveData({
+      error,
+      requestData: SecretManager.redactSensitiveData(req.body)
+    }));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to create requirement'
@@ -183,7 +187,10 @@ router.get('/:id', async (req: Request, res: Response) => {
       requirement
     });
   } catch (error) {
-    console.error('Error fetching requirement:', error);
+    console.error('[REQUIREMENT_ROUTES] Error fetching requirement:', SecretManager.redactSensitiveData({
+      error,
+      requirementId: req.params.id
+    }));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch requirement'
@@ -270,7 +277,11 @@ router.put('/:id', async (req: Request, res: Response) => {
       message: 'Requirement updated successfully'
     });
   } catch (error) {
-    console.error('Error updating requirement:', error);
+    console.error('[REQUIREMENT_ROUTES] Error updating requirement:', SecretManager.redactSensitiveData({
+      error,
+      requirementId: req.params.id,
+      updateData: SecretManager.redactSensitiveData(req.body)
+    }));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to update requirement'
@@ -317,7 +328,7 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
       message: `Requirement status updated to ${status} successfully`
     });
   } catch (error) {
-    console.error('Error updating requirement status:', error);
+    console.error('Error updating requirement status:', SecretManager.redactSensitiveData(error));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to update requirement status'
@@ -352,7 +363,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       message: 'Requirement deleted successfully'
     });
   } catch (error) {
-    console.error('Error deleting requirement:', error);
+    console.error('Error deleting requirement:', SecretManager.redactSensitiveData(error));
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to delete requirement'
@@ -360,7 +371,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
-<<<<<<< HEAD
 // Advanced workflow endpoints for B-404, B-405, B-406, B-407
 
 // Create requirement with advanced workflow features
@@ -386,16 +396,6 @@ router.post('/advanced', async (req: Request, res: Response) => {
 
     // Check if user has access to the project
     const hasAccess = await ProjectModel.canUserAccess(data.project_id, user.id);
-=======
-// Get requirements summary statistics for a project
-router.get('/project/:projectId/summary', async (req: Request, res: Response) => {
-  try {
-    const user = req.user as User;
-    const { projectId } = req.params;
-
-    // Check if user has access to this project
-    const hasAccess = await ProjectModel.canUserAccess(projectId, user.id);
->>>>>>> dust-polecat/polecat/nitro/gt-x4x
     if (!hasAccess) {
       return res.status(403).json({
         error: 'Access Denied',
@@ -403,7 +403,6 @@ router.get('/project/:projectId/summary', async (req: Request, res: Response) =>
       });
     }
 
-<<<<<<< HEAD
     const requirement = await RequirementModel.createAdvanced(data, user.id);
     const requirementWithDetails = await RequirementModel.findByIdWithWorkflowDetails(requirement.id);
 
@@ -486,25 +485,10 @@ router.patch('/:id/assignment', async (req: Request, res: Response) => {
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to update assignment'
-=======
-    const summary = await RequirementModel.getProjectSummary(projectId);
-
-    res.json({
-      project_id: projectId,
-      summary,
-      generated_at: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error fetching project requirements summary:', error);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'Failed to fetch project requirements summary'
->>>>>>> dust-polecat/polecat/nitro/gt-x4x
     });
   }
 });
 
-<<<<<<< HEAD
 // B-404: Update status with advanced workflow
 router.patch('/:id/status-advanced', async (req: Request, res: Response) => {
   try {
@@ -991,7 +975,10 @@ router.get('/assigned/me', async (req: Request, res: Response) => {
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch assigned requirements'
-=======
+    });
+  }
+});
+
 // Get requirements summary statistics for user's accessible requirements
 router.get('/summary', async (req: Request, res: Response) => {
   try {
@@ -1169,7 +1156,6 @@ router.get('/workspace-summary', async (req: Request, res: Response) => {
     res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch workspace requirements summary'
->>>>>>> dust-polecat/polecat/nitro/gt-x4x
     });
   }
 });

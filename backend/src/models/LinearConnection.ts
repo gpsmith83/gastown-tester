@@ -5,13 +5,18 @@ import {
   UpdateLinearConnectionRequest,
   LinearConnectionValidationResult
 } from './types';
-import * as crypto from 'crypto';
+import { SecretManager } from '../services/SecretManager';
 
 export class LinearConnectionModel {
 
-  // Hash API token for secure storage
-  private static hashToken(token: string): string {
-    return crypto.createHash('sha256').update(token).digest('hex');
+  // Encrypt API token for secure storage
+  private static encryptToken(token: string): string {
+    return SecretManager.encrypt(token);
+  }
+
+  // Decrypt API token for use
+  private static decryptToken(encryptedToken: string): string {
+    return SecretManager.decrypt(encryptedToken);
   }
 
   // Create a new Linear connection for a project
@@ -19,26 +24,35 @@ export class LinearConnectionModel {
     project_id: string,
     data: CreateLinearConnectionRequest
   ): Promise<LinearConnection> {
-    const token_hash = this.hashToken(data.api_token);
+    try {
+      const encrypted_token = this.encryptToken(data.api_token);
 
-    const result = await db.query(
-      `INSERT INTO linear_connections (
-        project_id, api_token_hash, workspace_id, team_id,
-        board_id, project_id_linear
-      )
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [
+      const result = await db.query(
+        `INSERT INTO linear_connections (
+          project_id, api_token_hash, workspace_id, team_id,
+          board_id, project_id_linear
+        )
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *`,
+        [
+          project_id,
+          encrypted_token,
+          data.workspace_id,
+          data.team_id,
+          data.board_id || null,
+          data.project_id_linear || null
+        ]
+      );
+
+      return result.rows[0];
+    } catch (error) {
+      console.error('[LINEAR_CONNECTION] Create failed:', SecretManager.redactSensitiveData({
+        error,
         project_id,
-        token_hash,
-        data.workspace_id,
-        data.team_id,
-        data.board_id || null,
-        data.project_id_linear || null
-      ]
-    );
-
-    return result.rows[0];
+        data: SecretManager.redactSensitiveData(data)
+      }));
+      throw error;
+    }
   }
 
   // Get Linear connection by project ID
@@ -144,13 +158,31 @@ export class LinearConnectionModel {
     return (result.rowCount ?? 0) > 0;
   }
 
-  // Check if API token matches stored hash
+  // Check if API token matches stored encrypted token
   static async verifyToken(project_id: string, token: string): Promise<boolean> {
-    const connection = await this.findByProjectId(project_id);
-    if (!connection) return false;
+    try {
+      const connection = await this.findByProjectId(project_id);
+      if (!connection || !connection.api_token_hash) return false;
 
-    const token_hash = this.hashToken(token);
-    return connection.api_token_hash === token_hash;
+      const decrypted_token = this.decryptToken(connection.api_token_hash);
+      return decrypted_token === token;
+    } catch (error) {
+      console.error('[LINEAR_CONNECTION] Token verification failed:', SecretManager.redactSensitiveData(error));
+      return false;
+    }
+  }
+
+  // Get decrypted API token for making Linear API calls
+  static async getDecryptedToken(project_id: string): Promise<string | null> {
+    try {
+      const connection = await this.findByProjectId(project_id);
+      if (!connection || !connection.api_token_hash) return null;
+
+      return this.decryptToken(connection.api_token_hash);
+    } catch (error) {
+      console.error('[LINEAR_CONNECTION] Token decryption failed:', SecretManager.redactSensitiveData(error));
+      return null;
+    }
   }
 
   // Get all validated Linear connections
