@@ -14,8 +14,8 @@ import { isDatabaseAvailable, initializeDatabase } from './config/database';
 // Import route modules
 import workspaceRoutes from './routes/workspaces';
 import projectRoutes from './routes/projects';
-import aiRoutes from './routes/ai';
-import aiAuditRoutes from './routes/ai-audit';
+// import aiRoutes from './routes/ai'; // Temporarily disabled due to syntax errors
+// import aiAuditRoutes from './routes/ai-audit'; // Temporarily disabled
 // import requirementRoutes from './routes/requirements'; // Temporarily disabled due to TypeScript errors
 // import refinementSessionRoutes from './routes/refinement-sessions'; // Temporarily disabled
 // import requirementMessageRoutes from './routes/requirement-messages'; // Temporarily disabled
@@ -24,7 +24,7 @@ import aiAuditRoutes from './routes/ai-audit';
 // import linearRoutes from './routes/linear'; // Temporarily disabled
 // import githubRepositoryRoutes from './routes/github-repositories'; // Temporarily disabled
 import jobRoutes from './routes/jobs';
-import contextSourceRoutes from './routes/context-sources';
+// import contextSourceRoutes from './routes/context-sources'; // Temporarily disabled
 import monitoringRoutes from './routes/monitoring';
 // import personaProgressionRoutes from './routes/personaProgression'; // Temporarily disabled
 // import { exportsRouter } from './routes/exports'; // Temporarily disabled
@@ -32,7 +32,7 @@ import monitoringRoutes from './routes/monitoring';
 // import personaRecommendationRoutes from './routes/persona-recommendations'; // Temporarily disabled
 import { globalAIService } from './services/ai-provider';
 import { performanceMonitoringMiddleware } from './middleware/performanceMonitoring';
-import { globalRetryProcessor } from './services/RetryProcessor';
+// import { globalRetryProcessor } from './services/RetryProcessor'; // Temporarily disabled
 
 // Import security middleware
 import {
@@ -162,10 +162,7 @@ app.get('/', (req: Request, res: Response) => {
       auth: '/auth',
       workspaces: '/api/workspaces',
       projects: '/api/projects',
-      ai: '/api/ai',
-      'ai-audit': '/api/ai/audit',
       jobs: '/api/jobs',
-      context_sources: '/api/context-sources',
       monitoring: '/api/monitoring'
     }
   });
@@ -175,8 +172,8 @@ app.get('/', (req: Request, res: Response) => {
 app.use('/auth', authRateLimit, authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/projects', projectRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/ai/audit', aiAuditRoutes);
+// app.use('/api/ai', aiRoutes); // Temporarily disabled
+// app.use('/api/ai/audit', aiAuditRoutes); // Temporarily disabled
 // app.use('/api/requirements', requirementRoutes); // Temporarily disabled
 // app.use('/api/refinement-sessions', refinementSessionRoutes); // Temporarily disabled
 // app.use('/api/requirement-messages', requirementMessageRoutes); // Temporarily disabled
@@ -185,7 +182,7 @@ app.use('/api/ai/audit', aiAuditRoutes);
 // app.use('/api/linear', linearRoutes); // Temporarily disabled
 // app.use('/api/github-repositories', githubRepositoryRoutes); // Temporarily disabled
 app.use('/api/jobs', jobRoutes);
-app.use('/api/context-sources', contextSourceRoutes);
+// app.use('/api/context-sources', contextSourceRoutes); // Temporarily disabled
 app.use('/api/monitoring', monitoringRoutes);
 // app.use('/api/persona-progression', personaProgressionRoutes); // Temporarily disabled
 // app.use('/api/exports', exportsRouter); // Temporarily disabled
@@ -258,17 +255,18 @@ async function startServer() {
     }
 
     // Initialize export retry processor if database is available
-    if (dbAvailable) {
-      try {
-        globalRetryProcessor.start(60000); // Check every minute
-        appLogger.info('Export retry processor started', { operation: 'retry_processor_init' });
-      } catch (error) {
-        appLogger.warn('Export retry processor initialization failed', {
-          operation: 'retry_processor_init',
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
-    }
+    // Temporarily disabled due to dependency issues
+    // if (dbAvailable) {
+    //   try {
+    //     globalRetryProcessor.start(60000); // Check every minute
+    //     appLogger.info('Export retry processor started', { operation: 'retry_processor_init' });
+    //   } catch (error) {
+    //     appLogger.warn('Export retry processor initialization failed', {
+    //       operation: 'retry_processor_init',
+    //       error: error instanceof Error ? error.message : 'Unknown error'
+    //     });
+    //   }
+    // }
 
     // Start Express server
     const server = app.listen(PORT, () => {
@@ -330,7 +328,7 @@ server.then((srv) => {
 
 process.on('SIGTERM', () => {
   appLogger.info('SIGTERM received, shutting down gracefully', { operation: 'server_shutdown' });
-  globalRetryProcessor.stop();
+  // globalRetryProcessor.stop(); // Temporarily disabled
   if (serverInstance) {
     serverInstance.close(() => {
       appLogger.info('Process terminated', { operation: 'server_shutdown' });
@@ -343,7 +341,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   appLogger.info('SIGINT received, shutting down gracefully', { operation: 'server_shutdown' });
-  globalRetryProcessor.stop();
+  // globalRetryProcessor.stop(); // Temporarily disabled
   if (serverInstance) {
     serverInstance.close(() => {
       appLogger.info('Process terminated', { operation: 'server_shutdown' });

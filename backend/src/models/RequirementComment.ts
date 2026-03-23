@@ -2,7 +2,8 @@ import { db } from '../config/database';
 import {
   RequirementComment,
   RequirementCommentWithAuthor,
-  CreateRequirementCommentRequest
+  CreateRequirementCommentRequest,
+  RequirementCommentData
 } from './types';
 
 export class RequirementCommentModel {
@@ -10,7 +11,7 @@ export class RequirementCommentModel {
   static async create(
     requirement_id: string,
     author_id: string,
-    data: CreateRequirementCommentRequest
+    data: RequirementCommentData
   ): Promise<RequirementComment> {
     const result = await db.query(
       `INSERT INTO requirement_comments (

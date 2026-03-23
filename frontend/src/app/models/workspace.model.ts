@@ -78,6 +78,8 @@ export interface CreateProjectRequest {
   default_persona_stack?: any;
   github_repo_url?: string;
   github_repo_id?: string;
+  status?: 'active' | 'archived' | 'draft';
+  settings?: any;
 }
 
 // API Response wrappers

@@ -46,20 +46,8 @@ export interface ApiResponse<T> {
 
 export interface RequirementsResponse {
   requirements: RequirementWithDetails[];
-  total?: number;
-}
-
-export interface RequirementResponse {
-  requirement: RequirementWithDetails;
-}
-
-export interface RequirementsResponse {
-  requirements: RequirementWithDetails[];
   total: number;
-<<<<<<< HEAD
   count: number;
-=======
->>>>>>> dust-polecat/polecat/chrome/gt-e77
 }
 
 export interface RequirementResponse {
@@ -67,7 +55,6 @@ export interface RequirementResponse {
   message?: string;
 }
 
-<<<<<<< HEAD
 // Requirement detail page specific interfaces
 export interface RequirementDetailState {
   requirement: RequirementWithDetails | null;
@@ -144,32 +131,4 @@ export interface CreateReadinessGateOverrideRequest {
   override_score?: number;
   override_type?: 'manual' | 'automatic' | 'persona_rule';
   expires_at?: string;
-=======
-// Re-export needed types from workspace model for convenience
-export interface User {
-  id: string;
-  github_id: string;
-  username: string;
-  email: string;
-  avatar_url?: string;
-  name?: string;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  workspace_id: string;
-  owner_id: string;
-  product_area?: string;
-  goals?: string[];
-  default_labels?: any[];
-  default_persona_stack?: any;
-  status: 'active' | 'archived' | 'draft';
-  settings?: any;
-  created_at: Date;
-  updated_at: Date;
->>>>>>> dust-polecat/polecat/chrome/gt-e77
 }

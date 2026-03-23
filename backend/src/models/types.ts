@@ -127,9 +127,11 @@ export interface Requirement {
   description?: string;
   project_id: string;
   author_id: string;
+  assignee_id?: string;
   priority: number; // 1=highest, 5=lowest
+  priority_label?: string;
   type: 'feature' | 'bug' | 'enhancement' | 'epic';
-  status: 'draft' | 'active' | 'completed' | 'archived';
+  status: 'draft' | 'active' | 'in_progress' | 'completed' | 'archived';
   github_issue_number?: number;
   github_issue_url?: string;
   is_active: boolean;
@@ -140,6 +142,161 @@ export interface Requirement {
 export interface RequirementWithDetails extends Requirement {
   project: Project;
   author: User;
+}
+
+export interface RequirementWorkflowDetails extends RequirementWithDetails {
+  assignee?: User;
+  workflow_state?: string;
+  workflow_metadata?: any;
+}
+
+export interface CreateRequirementRequest {
+  title: string;
+  description?: string;
+  project_id: string;
+  priority?: number;
+  type?: 'feature' | 'bug' | 'enhancement' | 'epic';
+  status?: 'draft' | 'active' | 'completed' | 'archived';
+  assignee_id?: string;
+  github_issue_number?: number;
+  github_issue_url?: string;
+}
+
+export interface CreateRequirementAdvancedRequest extends CreateRequirementRequest {
+  workflow_state?: string;
+  workflow_metadata?: any;
+  labels?: string[];
+  estimated_effort?: string;
+  priority_label?: string;
+  due_date?: Date;
+  estimated_hours?: number;
+  story_points?: number;
+  metadata?: any;
+  watchers?: string[];
+}
+
+export interface UpdateRequirementRequest {
+  title?: string;
+  description?: string;
+  priority?: number;
+  type?: 'feature' | 'bug' | 'enhancement' | 'epic';
+  status?: 'draft' | 'active' | 'completed' | 'archived';
+  assignee_id?: string;
+  github_issue_number?: number;
+  github_issue_url?: string;
+  is_active?: boolean;
+}
+
+export interface UpdateRequirementAssignmentRequest {
+  assignee_id?: string;
+  workflow_state?: string;
+  notes?: string;
+  change_reason?: string;
+}
+
+export interface UpdateRequirementStatusRequest {
+  status: 'draft' | 'active' | 'in_progress' | 'completed' | 'archived';
+  notes?: string;
+  workflow_metadata?: any;
+  resolution?: string;
+  resolution_notes?: string;
+  change_reason?: string;
+}
+
+export interface UpdateRequirementPriorityRequest {
+  priority: number;
+  priority_label?: string;
+  notes?: string;
+  urgency_score?: number;
+  due_date?: Date;
+  change_reason?: string;
+}
+
+export interface UpdateRequirementLifecycleRequest {
+  is_active: boolean;
+  archived_reason?: string;
+  notes?: string;
+  estimated_hours?: number;
+  actual_hours?: number;
+  story_points?: number;
+  labels?: string[];
+  metadata?: any;
+}
+
+export interface RequirementHistory {
+  id: string;
+  requirement_id: string;
+  user_id: string;
+  action: string;
+  field_name?: string;
+  old_value?: any;
+  new_value?: any;
+  change_reason?: string;
+  metadata?: any;
+  created_at: Date;
+}
+
+export interface RequirementHistoryWithUser extends RequirementHistory {
+  user: User;
+}
+
+export interface RequirementComment {
+  id: string;
+  requirement_id: string;
+  author_id: string;
+  content: string;
+  comment_type?: string;
+  is_internal?: boolean;
+  metadata?: any;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface RequirementCommentWithAuthor extends RequirementComment {
+  author: User;
+}
+
+export interface CreateRequirementCommentRequest {
+  requirement_id: string;
+  content: string;
+  comment_type?: string;
+  is_internal?: boolean;
+  metadata?: any;
+}
+
+export interface RequirementCommentData {
+  content: string;
+  comment_type?: string;
+  is_internal?: boolean;
+  metadata?: any;
+}
+
+export interface RequirementWatcher {
+  id: string;
+  requirement_id: string;
+  user_id: string;
+  notification_preferences?: any;
+  is_active: boolean;
+  created_at: Date;
+}
+
+export interface RequirementWatcherWithUser extends RequirementWatcher {
+  user: User;
+}
+
+export interface RequirementDependency {
+  id: string;
+  requirement_id: string;
+  depends_on_requirement_id: string;
+  dependency_type: 'blocks' | 'follows' | 'related';
+  is_active: boolean;
+  created_at: Date;
+}
+
+export interface RequirementDependencyWithDetails extends RequirementDependency {
+  requirement: Requirement;
+  depends_on_requirement: Requirement;
 }
 
 export interface TicketCandidate {

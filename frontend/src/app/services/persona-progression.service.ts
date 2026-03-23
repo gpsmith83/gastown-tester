@@ -1,16 +1,4 @@
 import { Injectable } from '@angular/core';
-<<<<<<< HEAD
-import { HttpClient } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import {
-  PersonaProgressionHistory,
-  CreatePersonaProgressionRequest,
-  PersonaProgressionSession,
-  PersonaProgressionAnalytics,
-  SpecialistUsageStats
-} from '../models/workspace.model';
-=======
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -19,16 +7,56 @@ import {
   CreateReadinessGateOverrideRequest,
   ApiResponse
 } from '../models/requirement.model';
->>>>>>> check-chrome-x39
+import {
+  PersonaProgressionHistory,
+  CreatePersonaProgressionRequest,
+  PersonaProgressionSession,
+  PersonaProgressionAnalytics,
+  SpecialistUsageStats
+} from '../models/workspace.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PersonaProgressionService {
-<<<<<<< HEAD
   private readonly API_BASE = 'http://localhost:3000/api/persona-progression';
 
   constructor(private http: HttpClient) {}
+
+  // Readiness Gate Override methods
+
+  // Get all overrides for a requirement
+  getReadinessOverrides(requirementId: string): Observable<{ overrides: ReadinessGateOverride[] }> {
+    return this.http.get<{ overrides: ReadinessGateOverride[] }>(`${this.API_BASE}/readiness-overrides/requirement/${requirementId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  // Get specific override for requirement and dimension
+  getReadinessOverride(requirementId: string, dimensionId: string): Observable<{ override: ReadinessGateOverride | null }> {
+    return this.http.get<{ override: ReadinessGateOverride | null }>(`${this.API_BASE}/readiness-overrides/requirement/${requirementId}/dimension/${dimensionId}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  // Create a new readiness gate override
+  createReadinessOverride(data: CreateReadinessGateOverrideRequest): Observable<{ override: ReadinessGateOverride; message: string }> {
+    return this.http.post<{ override: ReadinessGateOverride; message: string }>(`${this.API_BASE}/readiness-overrides`, data)
+      .pipe(catchError(this.handleError));
+  }
+
+  // Update a readiness gate override
+  updateReadinessOverride(
+    overrideId: string,
+    data: { override_reason?: string; override_score?: number; expires_at?: string; is_active?: boolean }
+  ): Observable<{ override: ReadinessGateOverride; message: string }> {
+    return this.http.put<{ override: ReadinessGateOverride; message: string }>(`${this.API_BASE}/readiness-overrides/${overrideId}`, data)
+      .pipe(catchError(this.handleError));
+  }
+
+  // Delete a readiness gate override
+  deleteReadinessOverride(overrideId: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.API_BASE}/readiness-overrides/${overrideId}`)
+      .pipe(catchError(this.handleError));
+  }
 
   /**
    * Create a new persona progression record
@@ -36,7 +64,7 @@ export class PersonaProgressionService {
   createProgressionRecord(data: CreatePersonaProgressionRequest): Observable<PersonaProgressionHistory> {
     return this.http.post<PersonaProgressionHistory>(this.API_BASE, data, { withCredentials: true })
       .pipe(
-        catchError(error => {
+        catchError((error: any) => {
           console.error('Failed to create progression record:', error);
           return throwError(() => error);
         })
@@ -49,7 +77,7 @@ export class PersonaProgressionService {
   getProgressionRecord(id: string): Observable<PersonaProgressionHistory> {
     return this.http.get<PersonaProgressionHistory>(`${this.API_BASE}/${id}`, { withCredentials: true })
       .pipe(
-        catchError(error => {
+        catchError((error: any) => {
           console.error('Failed to get progression record:', error);
           return throwError(() => error);
         })
@@ -62,7 +90,7 @@ export class PersonaProgressionService {
   updateProgressionRecord(id: string, data: Partial<CreatePersonaProgressionRequest>): Observable<PersonaProgressionHistory> {
     return this.http.put<PersonaProgressionHistory>(`${this.API_BASE}/${id}`, data, { withCredentials: true })
       .pipe(
-        catchError(error => {
+        catchError((error: any) => {
           console.error('Failed to update progression record:', error);
           return throwError(() => error);
         })
@@ -75,7 +103,7 @@ export class PersonaProgressionService {
   getSessionHistory(sessionId: string): Observable<PersonaProgressionHistory[]> {
     return this.http.get<PersonaProgressionHistory[]>(`${this.API_BASE}/session/${sessionId}`, { withCredentials: true })
       .pipe(
-        catchError(error => {
+        catchError((error: any) => {
           console.error('Failed to get session history:', error);
           return throwError(() => error);
         })
@@ -88,7 +116,7 @@ export class PersonaProgressionService {
   getProjectHistory(projectId: string): Observable<PersonaProgressionHistory[]> {
     return this.http.get<PersonaProgressionHistory[]>(`${this.API_BASE}/project/${projectId}`, { withCredentials: true })
       .pipe(
-        catchError(error => {
+        catchError((error: any) => {
           console.error('Failed to get project history:', error);
           return throwError(() => error);
         })
@@ -102,7 +130,7 @@ export class PersonaProgressionService {
     const params = sessionId ? `?session_id=${sessionId}` : '';
     return this.http.get<PersonaProgressionSession>(`${this.API_BASE}/project/${projectId}/current-session${params}`, { withCredentials: true })
       .pipe(
-        catchError(error => {
+        catchError((error: any) => {
           console.error('Failed to get current session:', error);
           return throwError(() => error);
         })
@@ -115,7 +143,7 @@ export class PersonaProgressionService {
   getSpecialistHistory(projectId: string, limit = 50): Observable<SpecialistUsageStats[]> {
     return this.http.get<SpecialistUsageStats[]>(`${this.API_BASE}/project/${projectId}/specialists?limit=${limit}`, { withCredentials: true })
       .pipe(
-        catchError(error => {
+        catchError((error: any) => {
           console.error('Failed to get specialist history:', error);
           return throwError(() => error);
         })
@@ -138,7 +166,7 @@ export class PersonaProgressionService {
       average_duration_minutes: number;
     }>>(`${this.API_BASE}/project/${projectId}/stages`, { withCredentials: true })
       .pipe(
-        catchError(error => {
+        catchError((error: any) => {
           console.error('Failed to get stage analytics:', error);
           return throwError(() => error);
         })
@@ -151,7 +179,7 @@ export class PersonaProgressionService {
   getProjectAnalytics(projectId: string): Observable<PersonaProgressionAnalytics> {
     return this.http.get<PersonaProgressionAnalytics>(`${this.API_BASE}/project/${projectId}/analytics`, { withCredentials: true })
       .pipe(
-        catchError(error => {
+        catchError((error: any) => {
           console.error('Failed to get project analytics:', error);
           return throwError(() => error);
         })
@@ -164,7 +192,7 @@ export class PersonaProgressionService {
   generateSessionId(): Observable<{ session_id: string }> {
     return this.http.post<{ session_id: string }>(`${this.API_BASE}/generate-session`, {}, { withCredentials: true })
       .pipe(
-        catchError(error => {
+        catchError((error: any) => {
           console.error('Failed to generate session ID:', error);
           return throwError(() => error);
         })
@@ -177,7 +205,7 @@ export class PersonaProgressionService {
   deleteSession(sessionId: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.API_BASE}/session/${sessionId}`, { withCredentials: true })
       .pipe(
-        catchError(error => {
+        catchError((error: any) => {
           console.error('Failed to delete session:', error);
           return throwError(() => error);
         })
@@ -247,44 +275,6 @@ export class PersonaProgressionService {
     };
 
     return this.updateProgressionRecord(progressionId, data);
-=======
-  private readonly apiUrl = 'http://localhost:3000/api/persona-progression';
-
-  constructor(private http: HttpClient) {}
-
-  // Readiness Gate Override methods
-
-  // Get all overrides for a requirement
-  getReadinessOverrides(requirementId: string): Observable<{ overrides: ReadinessGateOverride[] }> {
-    return this.http.get<{ overrides: ReadinessGateOverride[] }>(`${this.apiUrl}/readiness-overrides/requirement/${requirementId}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  // Get specific override for requirement and dimension
-  getReadinessOverride(requirementId: string, dimensionId: string): Observable<{ override: ReadinessGateOverride | null }> {
-    return this.http.get<{ override: ReadinessGateOverride | null }>(`${this.apiUrl}/readiness-overrides/requirement/${requirementId}/dimension/${dimensionId}`)
-      .pipe(catchError(this.handleError));
-  }
-
-  // Create a new readiness gate override
-  createReadinessOverride(data: CreateReadinessGateOverrideRequest): Observable<{ override: ReadinessGateOverride; message: string }> {
-    return this.http.post<{ override: ReadinessGateOverride; message: string }>(`${this.apiUrl}/readiness-overrides`, data)
-      .pipe(catchError(this.handleError));
-  }
-
-  // Update a readiness gate override
-  updateReadinessOverride(
-    overrideId: string,
-    data: { override_reason?: string; override_score?: number; expires_at?: string; is_active?: boolean }
-  ): Observable<{ override: ReadinessGateOverride; message: string }> {
-    return this.http.put<{ override: ReadinessGateOverride; message: string }>(`${this.apiUrl}/readiness-overrides/${overrideId}`, data)
-      .pipe(catchError(this.handleError));
-  }
-
-  // Delete a readiness gate override
-  deleteReadinessOverride(overrideId: string): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${this.apiUrl}/readiness-overrides/${overrideId}`)
-      .pipe(catchError(this.handleError));
   }
 
   private handleError(error: HttpErrorResponse) {
@@ -300,6 +290,5 @@ export class PersonaProgressionService {
 
     console.error('PersonaProgressionService error:', error);
     return throwError(() => new Error(errorMessage));
->>>>>>> check-chrome-x39
   }
 }
