@@ -196,10 +196,10 @@ export class LinearService {
   }> {
     // For MVP, simulate validation response
     // In production, this would call a separate endpoint to test the token
-    return new Promise<any>((resolve) => {
+    return new Observable(observer => {
       setTimeout(() => {
         if (apiToken.startsWith('lin_api_')) {
-          resolve({
+          observer.next({
             valid: true,
             organization: {
               id: 'org_123',
@@ -251,16 +251,14 @@ export class LinearService {
             ]
           });
         } else {
-          resolve({
+          observer.next({
             valid: false,
             error: 'Invalid API token format. Please provide a valid Linear API token.'
           });
         }
+        observer.complete();
       }, 1000); // Simulate network delay
-    }).then(result => new Observable(observer => {
-      observer.next(result);
-      observer.complete();
-    }));
+    });
   }
 
   /**

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, interval, switchMap, takeUntil, takeWhile } from 'rxjs';
+import { Observable, interval, switchMap, takeUntil, takeWhile, map } from 'rxjs';
 
 export interface CreateExportRequest {
   name: string;
@@ -230,9 +230,8 @@ export class ExportService {
       takeWhile((response) => {
         const status = response.export_job.status;
         return status === 'pending' || status === 'processing';
-      }, true) // Include the final emission when condition becomes false
-    ).pipe(
-      switchMap(() => this.getExportJob(exportId))
+      }, true), // Include the final emission when condition becomes false
+      map(response => response.export_job)
     );
   }
 

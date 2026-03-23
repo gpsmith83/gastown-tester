@@ -329,8 +329,8 @@ export class ExportStatusComponent implements OnInit, OnDestroy {
     this.stopStatusPolling();
     this.statusSubscription = this.exportService.pollExportStatus(this.exportJob.id)
       .subscribe({
-        next: (response) => {
-          this.exportJob = response.export_job;
+        next: (exportJob) => {
+          this.exportJob = exportJob;
 
           // Stop polling when export is no longer in progress
           if (!this.isInProgress()) {

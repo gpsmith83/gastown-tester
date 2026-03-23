@@ -123,7 +123,6 @@ import {
   ResourceImpl,
   ResourceStatus,
   RuntimeError,
-  SIGNAL,
   SSR_CONTENT_INTEGRITY_MARKER,
   Sanitizer,
   SecurityContext,
@@ -273,10 +272,8 @@ import {
   restoreComponentResolutionQueue,
   runInInjectionContext,
   setAllowDuplicateNgModuleIdsForTest,
-  setAlternateWeakRefImpl,
   setClassMetadata,
   setClassMetadataAsync,
-  setCurrentInjector,
   setDocument,
   setInjectorProfilerContext,
   setLocaleId,
@@ -504,10 +501,19 @@ import {
   ɵɵvalidateAttribute,
   ɵɵviewQuery,
   ɵɵviewQuerySignal
-} from "./chunk-GHU4Q55F.js";
-import "./chunk-7AADCGDY.js";
-import "./chunk-37VSNGIT.js";
-import "./chunk-HCRA6G56.js";
+} from "./chunk-B6RHLUX3.js";
+import {
+  setCurrentInjector
+} from "./chunk-CBSPD4QL.js";
+import {
+  SIGNAL,
+  setAlternateWeakRefImpl
+} from "./chunk-POKPAKX6.js";
+import "./chunk-QFNYDC44.js";
+import "./chunk-BE2P6JLI.js";
+import "./chunk-X4VY6KOD.js";
+import "./chunk-6YWZ3WS4.js";
+import "./chunk-WDMUDEB6.js";
 export {
   ANIMATION_MODULE_TYPE,
   APP_BOOTSTRAP_LISTENER,

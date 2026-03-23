@@ -286,7 +286,7 @@ export class ExportCreateDialogComponent implements OnInit {
     if (this.data.workspace_id) {
       this.projectService.getProjectsByWorkspace(this.data.workspace_id).subscribe({
         next: (response) => {
-          this.projects = response.projects || [];
+          this.projects = response || [];
         },
         error: (error) => {
           console.error('Failed to load projects:', error);
@@ -300,7 +300,7 @@ export class ExportCreateDialogComponent implements OnInit {
     if (workspaceId) {
       this.projectService.getProjectsByWorkspace(workspaceId).subscribe({
         next: (response) => {
-          this.projects = response.projects || [];
+          this.projects = response || [];
           // Reset project selection
           this.exportForm.patchValue({ project_id: '' });
         },
