@@ -68,4 +68,27 @@ process.on('SIGTERM', async () => {
   await db.end();
 });
 
+// Database utility functions
+export async function isDatabaseAvailable(): Promise<boolean> {
+  try {
+    const result = await db.query('SELECT 1');
+    return true;
+  } catch (error) {
+    console.error('Database connection test failed:', error);
+    return false;
+  }
+}
+
+export async function initializeDatabase(): Promise<void> {
+  // This function can be used to run initial database setup
+  // For now, just test the connection
+  try {
+    await db.query('SELECT 1');
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Database initialization failed:', error);
+    throw error;
+  }
+}
+
 export default db;

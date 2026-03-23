@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-<<<<<<< HEAD
+import { db } from '../config/database';
+import { ExportService } from '../services/ExportService';
 import { requireAuth } from '../config/auth';
 import { ExportJobModel } from '../models/ExportJob';
 import { RequirementModel } from '../models/Requirement';
@@ -11,15 +12,7 @@ import * as path from 'path';
 const csv = require('csv-writer');
 
 const router = Router();
-=======
-import { db } from '../config/database';
-import { ExportService } from '../services/ExportService';
-import { requireAuth } from '../config/auth';
-import { User } from '../models/types';
-
-const router = Router();
 const exportService = new ExportService(db);
->>>>>>> check-fury-w8a
 
 // All export routes require authentication
 router.use(requireAuth);
@@ -826,7 +819,4 @@ async function generateJSONFile(data: any, filename: string, dir: string): Promi
   return filePath;
 }
 
-export default router;
-=======
 export { router as exportsRouter };
->>>>>>> check-fury-w8a

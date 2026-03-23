@@ -28,6 +28,39 @@ export interface WorkspaceMember {
   created_at: Date;
 }
 
+export interface CreateWorkspaceRequest {
+  name: string;
+  description?: string;
+}
+
+export interface WorkspaceWithProjects extends Workspace {
+  project_count: number;
+  member_count: number;
+  projects?: Project[];
+}
+
+export interface CreateProjectRequest {
+  name: string;
+  description?: string;
+  workspace_id: string;
+  product_area?: string;
+  goals?: string[];
+  default_labels?: any[];
+  default_persona_stack?: any;
+  github_repo_url?: string;
+  github_repo_id?: string;
+  status?: 'active' | 'archived' | 'draft';
+  settings?: any;
+}
+
+export interface ProjectWithRepository extends Project {
+  repository?: any;
+}
+
+export interface ProjectWithLinearConnection extends Project {
+  linear_connection?: any;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -156,6 +189,7 @@ export interface LinearConnection {
   id: string;
   project_id: string;
   api_token: string; // encrypted in storage
+  api_token_hash: string; // hash of the API token
   workspace_id: string;
   team_id: string;
   board_id?: string;
@@ -166,6 +200,41 @@ export interface LinearConnection {
   sync_error?: string;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface UpdateLinearConnectionRequest {
+  api_token?: string;
+  workspace_id?: string;
+  team_id?: string;
+  board_id?: string;
+  project_id_linear?: string;
+  is_active?: boolean;
+}
+
+export interface LinearConnectionValidationResult {
+  is_valid: boolean;
+  error?: string;
+  workspace?: {
+    id?: string;
+    name?: string;
+  };
+  team?: {
+    id?: string;
+    name?: string;
+  };
+  board?: {
+    id?: string;
+    name?: string;
+  };
+  project?: {
+    id?: string;
+    name?: string;
+  };
+  organization?: {
+    id?: string;
+    name?: string;
+  };
+  permissions?: any[];
 }
 
 export interface LinearIssue {
