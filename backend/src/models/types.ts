@@ -412,16 +412,7 @@ export interface LinearIssue {
   synced_at: Date;
 }
 
-export interface CreateRequirementRequest {
-  title: string;
-  description?: string;
-  project_id: string;
-  priority?: number;
-  type?: 'feature' | 'bug' | 'enhancement' | 'epic';
-  status?: 'draft' | 'active';
-  github_issue_number?: number;
-  github_issue_url?: string;
-}
+// Duplicate interface removed - using the one defined earlier with full status types
 
 export interface UpdateRequirementRequest {
   title?: string;

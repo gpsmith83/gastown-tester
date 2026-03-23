@@ -4,6 +4,12 @@ import {
   setCurrentInjector
 } from "./chunk-CBSPD4QL.js";
 import {
+  BehaviorSubject,
+  Subject,
+  Subscription,
+  map
+} from "./chunk-X4VY6KOD.js";
+import {
   REACTIVE_NODE,
   SIGNAL,
   SIGNAL_NODE,
@@ -26,12 +32,6 @@ import {
   signalUpdateFn,
   untracked
 } from "./chunk-POKPAKX6.js";
-import {
-  BehaviorSubject,
-  Subject,
-  Subscription,
-  map
-} from "./chunk-X4VY6KOD.js";
 import {
   __async,
   __spreadProps,
@@ -26584,4 +26584,4 @@ export {
    * found in the LICENSE file at https://angular.dev/license
    *)
 */
-//# sourceMappingURL=chunk-B6RHLUX3.js.map
+//# sourceMappingURL=chunk-TMV6GZ67.js.map

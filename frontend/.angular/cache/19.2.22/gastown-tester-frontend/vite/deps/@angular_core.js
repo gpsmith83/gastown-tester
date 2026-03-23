@@ -501,18 +501,18 @@ import {
   ɵɵvalidateAttribute,
   ɵɵviewQuery,
   ɵɵviewQuerySignal
-} from "./chunk-B6RHLUX3.js";
+} from "./chunk-TMV6GZ67.js";
 import {
   setCurrentInjector
 } from "./chunk-CBSPD4QL.js";
-import {
-  SIGNAL,
-  setAlternateWeakRefImpl
-} from "./chunk-POKPAKX6.js";
 import "./chunk-QFNYDC44.js";
 import "./chunk-BE2P6JLI.js";
 import "./chunk-X4VY6KOD.js";
 import "./chunk-6YWZ3WS4.js";
+import {
+  SIGNAL,
+  setAlternateWeakRefImpl
+} from "./chunk-POKPAKX6.js";
 import "./chunk-WDMUDEB6.js";
 export {
   ANIMATION_MODULE_TYPE,
